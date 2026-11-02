@@ -18,7 +18,7 @@ Modular monolith (Express + Prisma) with a React SPA. Built stage by stage.
 | 8     | Dashboard UI                      | [x]  |
 | 9     | Product management UI             | [x]  |
 | 10    | Settings UI                       | [x]  |
-| 11    | E2E, a11y, coverage               | [ ]  |
+| 11    | E2E, a11y, coverage               | [x]  |
 | 12    | Production deployment             | [ ]  |
 | 13    | Docs and demo polish              | [ ]  |
 
@@ -357,3 +357,67 @@ Worked example, with the default set to **10**:
 
 Change the default to **5** and Keyboard becomes Healthy; Mouse, Cable, Hub, Stand and Lamp are
 unchanged because Mouse stays above 5 and the others have their own thresholds or no stock.
+
+## Intro page
+
+`/` is a public intro page with no navbar. It opens on a full-screen, centered hero: the StockFlow wordmark, the
+headline, two actions ("Create your organization" and "Log in", or "Open dashboard" when already
+signed in), and an animated **MagicRings** background, centered behind the copy and drawn in the brand colours (Deep Forest
+blending to Muted Copper on Warm Limestone). A soft limestone veil behind the text keeps it readable
+where a ring passes close. The rings react to the cursor, a click sends a ring
+outward, and the effect pauses when off-screen, respects `prefers-reduced-motion`, and quietly
+disappears on browsers without WebGL2 (the page is fully usable without it).
+
+Below the hero: a clearly labelled "Example" ledger, the three principles (track, see what needs
+attention, keep each team separate) and the single stock-status rule.
+
+The brand lives in `frontend/public/favicon.svg` (copper "flow" mark on Deep Forest), the page
+title/description/theme colour in `frontend/index.html`, and the wordmark in
+`frontend/src/components/logo.tsx`. The rings component is [React Bits](https://reactbits.dev)
+MagicRings, adapted to this project's strict TypeScript and lint rules
+(`frontend/src/components/magic-rings/`); tune it through the props on `<MagicRings />` in
+`frontend/src/pages/landing-page.tsx`.
+
+## Testing
+
+Everything runs locally; there is no CI service (owner decision). The levels, from fastest to
+broadest:
+
+| Level           | What it covers                                                                                                                    | Command                 |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Unit            | Pure rules: stock status, validation schemas, password/JWT, formatting                                                            | `npm test`              |
+| API integration | Each endpoint against the real Neon **test** database (Supertest)                                                                 | `npm test`              |
+| Component       | React screens and flows with a mocked API (React Testing Library + MSW)                                                           | `npm test`              |
+| API scenarios   | Whole user journeys through the HTTP API: the PRD demo, two-tenant isolation, auth guards, validation flows, security regressions | `npm run test:e2e`      |
+| Coverage gates  | Fails if coverage drops below the thresholds                                                                                      | `npm run test:coverage` |
+
+Run all of it in this order before a commit:
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm test              # unit + integration + component, all workspaces
+npm run test:e2e      # API scenario tests (subset of the backend suite, handy on its own)
+npm run test:coverage # thresholds below
+```
+
+Coverage thresholds: backend overall 80%, services and stock-status 90%; contracts 90% (stock-status
+90%); frontend 70%. The dev-only style guide, generated Prisma client and process entry point are
+excluded.
+
+`npm run test:e2e` covers, through the real HTTP API and database:
+
+- **Demo scenario**: signup, empty dashboard, create a product, dashboard metrics, edit quantity to
+  low stock, change the default threshold, search by SKU, edit, delete, logout.
+- **Tenant isolation**: two sessions both use SKU `KEY-001`; A gets 404 for B's product on read,
+  update and delete, B's data stays intact, lists, dashboards and settings are separate.
+- **Auth guards**: every protected endpoint returns 401 anonymously; duplicate email; wrong password.
+- **Validation flows**: duplicate SKU field error, invalid quantities, prices and SKUs.
+- **Security regressions**: cookie flags, no password hash in any response, rate limits, origin
+  check, no stack traces in 500s, `Cache-Control: private, no-store`.
+
+Tests that touch the database use a separate Neon database (`TEST_DATABASE_URL`) and refuse to run
+against the development database. Browser-driven (Playwright) and automated accessibility (axe)
+checks are intentionally not part of this project; keyboard and focus behaviour is covered by the
+component tests.

@@ -17,6 +17,12 @@ globalThis.fetch = (input, init) =>
     init,
   );
 
+// WHY: jsdom has no canvas/WebGL. Returning null from getContext makes the decorative MagicRings
+// effect skip itself (exactly what happens in a browser without WebGL2) and silences jsdom's
+// "not implemented" console errors.
+HTMLCanvasElement.prototype.getContext = (() =>
+  null) as typeof HTMLCanvasElement.prototype.getContext;
+
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }));
 afterEach(() => {
   server.resetHandlers();

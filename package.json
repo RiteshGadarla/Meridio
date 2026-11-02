@@ -23,7 +23,9 @@
     "db:deploy": "npm run db:deploy -w backend",
     "db:seed": "npm run db:seed -w backend",
     "db:studio": "npm run db:studio -w backend",
-    "db:reset": "npm run db:reset -w backend"
+    "db:reset": "npm run db:reset -w backend",
+    "test:e2e": "npm run build -w packages/contracts && npm run test:e2e -w backend",
+    "test:coverage": "npm run build -w packages/contracts && npm run test:coverage -w packages/contracts -w backend -w frontend"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

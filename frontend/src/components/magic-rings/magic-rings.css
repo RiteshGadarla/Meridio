@@ -1,0 +1,21 @@
+/*
+ * FILE: frontend/src/components/magic-rings/magic-rings.css
+ * PURPOSE: Container and canvas layout for the MagicRings WebGL effect.
+ * NOTES: The canvas ignores pointer events; the component listens on `window` instead, so page
+ *        content layered above the rings stays clickable.
+ */
+.magic-rings {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.magic-rings__canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}

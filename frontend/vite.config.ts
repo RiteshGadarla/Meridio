@@ -8,6 +8,7 @@
  *  - tailwindcss(): Tailwind v4 Vite plugin; no tailwind.config.js needed, theme lives in CSS.
  *  - test.environment 'jsdom': React Testing Library needs a DOM.
  *  - test.setupFiles: registers jest-dom matchers like toBeInTheDocument.
+ *  - test.coverage (npm run test:coverage): web >= 70%; the dev-only style guide and the WebGL MagicRings effect (cannot run in jsdom) are excluded.
  */
 /// <reference types="vitest/config" />
 import tailwindcss from '@tailwindcss/vite';
@@ -27,6 +28,20 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.ts'],
       globals: false,
+      coverage: {
+        provider: 'v8',
+        include: ['src/**/*.{ts,tsx}'],
+        // tests, test helpers, the dev-only style guide, and the bootstrap/type files
+        exclude: [
+          'src/**/*.test.{ts,tsx}',
+          'src/test/**',
+          'src/pages/design-page.tsx',
+          'src/components/magic-rings/**',
+          'src/main.tsx',
+          'src/vite-env.d.ts',
+        ],
+        thresholds: { lines: 70, statements: 70, functions: 70, branches: 70 },
+      },
     },
   };
 });

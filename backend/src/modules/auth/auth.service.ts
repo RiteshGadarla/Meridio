@@ -52,16 +52,22 @@ export function createAuthService(prisma: PrismaClient) {
       input: SignupInput,
     ): Promise<{ user: AuthUser; token: { sub: string; org: string } }> {
       const passwordHash = await hashPassword(input.password); // outside the tx: keep it short
-      const user = await prisma.$transaction(async (tx) => {
-        const organization = await tx.organization.create({
-          data: { name: input.organizationName },
-        });
-        return tx.user.create({
-          // email is already lowercased and trimmed by signupSchema
-          data: { email: input.email, passwordHash, organizationId: organization.id },
-          select: { id: true, email: true, organization: orgSelect },
-        });
-      });
+      const user = await prisma.$transaction(
+        async (tx) => {
+          const organization = await tx.organization.create({
+            data: { name: input.organizationName },
+          });
+          return tx.user.create({
+            // email is already lowercased and trimmed by signupSchema
+            data: { email: input.email, passwordHash, organizationId: organization.id },
+            select: { id: true, email: true, organization: orgSelect },
+          });
+        },
+        // WHY explicit limits: Prisma defaults (2s to get a connection, 5s to finish) are too tight
+        // for Neon, whose compute can take a few seconds to wake after idling. A timeout here would
+        // surface as a 500 on an otherwise valid signup.
+        { maxWait: 10_000, timeout: 15_000 },
+      );
       return { user: toAuthUser(user), token: { sub: user.id, org: user.organization.id } };
     },
 

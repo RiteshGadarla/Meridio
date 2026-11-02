@@ -1,6 +1,6 @@
 /**
  * FILE: frontend/src/app/routes.tsx
- * PURPOSE: Route table. Public: /login, /signup. Shell: /dashboard, /products, /settings.
+ * PURPOSE: Route table. Public: / (intro page), /login, /signup. Shell: /dashboard, /products, /settings.
  * LAYER: App wiring
  * USED BY: App.tsx, tests (inside a MemoryRouter)
  * NOTES:
@@ -9,7 +9,7 @@
  *    Vite replaces that with `false` in production builds, so the page is dropped from the bundle.
  */
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import {
   AuthedShell,
   RedirectIfAuthed,
@@ -17,6 +17,7 @@ import {
   SessionWatcher,
 } from '../features/auth/guards';
 import { DashboardPage } from '../pages/dashboard-page';
+import { LandingPage } from '../pages/landing-page';
 import { LoginPage } from '../pages/login-page';
 import { NotFoundPage } from '../pages/not-found-page';
 import { ProductsPage } from '../pages/products-page';
@@ -30,7 +31,7 @@ export function AppRoutes() {
     <>
       <SessionWatcher />
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<LandingPage />} />
         <Route element={<RedirectIfAuthed />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />

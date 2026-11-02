@@ -93,6 +93,24 @@ describe('SignupPage', () => {
   });
 });
 
+// Protects: visitors can always get back to the intro page from the auth screens.
+describe('Back to home link', () => {
+  it.each(['/login', '/signup'])(
+    '%s has a top-left link to the intro page that works',
+    async (route) => {
+      mockSession(null);
+      renderApp(route);
+      const back = await screen.findByRole('link', { name: 'Back to home' });
+      expect(back).toHaveAttribute('href', '/');
+      await userEvent.click(back);
+      expect(
+        await screen.findByRole('heading', { level: 1, name: /Know what is on your shelves/ }),
+      ).toBeInTheDocument();
+      expect(path()).toBe('/');
+    },
+  );
+});
+
 describe('LoginPage', () => {
   it('redirects to /dashboard on success', async () => {
     mockSession(null);

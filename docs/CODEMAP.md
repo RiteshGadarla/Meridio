@@ -191,3 +191,23 @@ One line per file. Updated every stage.
 | `src/features/settings/settings-form.tsx` | "Inventory Defaults" form                                                               |
 | `src/features/settings/settings.test.tsx` | Settings page tests                                                                     |
 | `src/pages/settings-page.tsx`             | Settings page (now real)                                                                |
+
+### Stage 11 additions and the intro page
+
+| File                                                  | Purpose                                                                         |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `backend/test/session.ts`                             | Cookie-keeping API client for scenario tests                                    |
+| `backend/test/e2e/demo-scenario.test.ts`              | PRD demo journey through the API                                                |
+| `backend/test/e2e/tenant-isolation.test.ts`           | Two-tenant isolation scenarios                                                  |
+| `backend/test/e2e/auth-guards.test.ts`                | Anonymous access, sessions, duplicate email, wrong password                     |
+| `backend/test/e2e/validation-flows.test.ts`           | Duplicate SKU and field validation errors                                       |
+| `backend/test/e2e/security-regression.test.ts`        | Cookie flags, secret leakage, rate limits, origin check, error hygiene, caching |
+| `backend/test/db/services-edge.test.ts`               | Service edge cases: missing org/user, every optional product field              |
+| `packages/contracts/src/stock-status.test.ts`         | Shared stock-status rule tests                                                  |
+| `packages/contracts/vitest.config.ts`                 | Contracts coverage gates                                                        |
+| `backend/vitest.config.ts`, `frontend/vite.config.ts` | Now define coverage thresholds                                                  |
+| `frontend/src/pages/landing-page.tsx` (+ test)        | Public intro page at `/`: MagicRings hero, no navbar                            |
+| `frontend/src/components/magic-rings/magic-rings.tsx` | WebGL2 MagicRings effect (React Bits, adapted); excluded from coverage          |
+| `frontend/src/components/magic-rings/magic-rings.css` | Container and canvas layout for the effect                                      |
+| `frontend/public/favicon.svg`                         | Brand favicon                                                                   |
+| `frontend/index.html`                                 | Title, description, theme colour, Open Graph tags                               |

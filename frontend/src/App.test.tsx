@@ -11,8 +11,8 @@ import { mockSession, renderApp, USER } from './test/render';
 describe('<AppRoutes /> (signed in)', () => {
   beforeEach(() => mockSession(USER));
 
-  it('redirects / to the dashboard inside the shell, showing the real organization and email', async () => {
-    renderApp('/');
+  it('shows the real organization and email inside the shell', async () => {
+    renderApp('/dashboard');
     expect(await screen.findByRole('heading', { name: 'Inventory overview' })).toBeInTheDocument();
     expect(screen.getAllByText('StockFlow').length).toBeGreaterThan(0);
     expect(screen.getByText('Acme')).toBeInTheDocument();
