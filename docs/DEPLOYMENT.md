@@ -21,7 +21,7 @@ flowchart LR
 
 ## Decisions worth knowing
 
-- **Backend URL lives in one place**: `vercel.json`. The React code only calls relative `/api/v1/...`.
+- **Backend URL lives in one place**: `frontend/vercel.json`. The React code only calls relative `/api/v1/...`.
 - **Both builds start at the repo root** because npm workspaces use the root lockfile and
   `packages/contracts` must be built before the API and the web app.
 - **One Neon connection string**: `DATABASE_URL`. The API queries through it as is; for migrations
@@ -86,23 +86,30 @@ After the first deploy, note the service URL (`https://<name>.onrender.com`) and
 ## 3. Vercel (web)
 
 1. _Add New > Project_, import the same repo.
-2. Settings (these are also in `vercel.json`, so they are applied automatically):
+2. Set **Root Directory** to `frontend` and keep _Include source files outside of the Root Directory
+   in the Build Step_ **enabled** (the default). The build needs `packages/contracts` and the root
+   lockfile, which live outside `frontend/`.
+3. Framework Preset: **Vite**. Then override these three (the same values are in
+   `frontend/vercel.json`, so they apply automatically; typing them in the dashboard is harmless):
 
-   | Setting          | Value                                                              |
-   | ---------------- | ------------------------------------------------------------------ |
-   | Root Directory   | repo root                                                          |
-   | Install Command  | `npm ci`                                                           |
-   | Build Command    | `npm run build -w packages/contracts && npm run build -w frontend` |
-   | Output Directory | `frontend/dist`                                                    |
+   | Setting          | Value                                                                                                                      |
+   | ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
+   | Install Command  | `cd .. && npm ci`                                                                                                          |
+   | Build Command    | `cd .. && npm run build -w packages/contracts && npm run build -w frontend && node scripts/check-bundle.mjs frontend/dist` |
+   | Output Directory | `dist`                                                                                                                     |
 
-3. **Edit `vercel.json`**: replace `YOUR-RENDER-SERVICE` in the first rewrite with your Render
-   service name, so the destination is `https://<name>.onrender.com/api/:path*`. Commit and push.
-   This is the only file that contains the backend address.
-4. The rewrite order matters: `/api/:path*` first, then the `/(.*)` fallback to `index.html`. The
+   Why not the defaults (`npm run build`, `vite build`): the web app imports the shared
+   `@meridio/contracts` package, which must be built first, and the install must run at the repo root
+   so npm workspaces link it. The last step fails the deploy if the bundle contains localhost URLs,
+   database URLs or secrets.
+
+4. The backend address is already set in `frontend/vercel.json`
+   (`https://meridio-g01d.onrender.com/api/:path*`). It is the only file that contains it.
+5. The rewrite order matters: `/api/:path*` first, then the `/(.*)` fallback to `index.html`. The
    fallback makes a refresh on `/products` work. The `x-vercel-enable-rewrite-caching: 0` header
    stops Vercel caching API responses.
-5. Deploy. Copy the production URL.
-6. Go back to Render and set `APP_ORIGIN` to that exact URL, then redeploy the API.
+6. Deploy. Copy the production URL.
+7. Go back to Render and set `APP_ORIGIN` to that exact URL, then redeploy the API.
 
 ## 4. Verify
 
@@ -123,7 +130,7 @@ product, log out, refresh `/products` while signed out (it should redirect to `/
 - [ ] Neon production database created; connection string copied
 - [ ] Render service created from `render.yaml` (or manually); env vars set
 - [ ] Render deploy is green; `/api/v1/health/ready` returns ready
-- [ ] `vercel.json` placeholder replaced with the real Render name, committed, pushed
+- [ ] `frontend/vercel.json` points at the real Render address (already set), committed, pushed
 - [ ] Vercel project deployed; production URL copied
 - [ ] Render `APP_ORIGIN` set to that exact URL; API redeployed
 - [ ] `npm run smoke:prod -- <vercel-url>` passes
@@ -136,8 +143,8 @@ product, log out, refresh `/products` while signed out (it should redirect to `/
 | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Login works but you are logged out on the next request            | Cookie not stored. Check you are using the **Vercel** URL (not the Render URL) and that `NODE_ENV=production` is set on Render (Secure cookie needs HTTPS, which both provide).                             |
 | `403 FORBIDDEN_ORIGIN` on sign up, log in or any save             | `APP_ORIGIN` on Render does not exactly match the URL in the browser address bar (check `https`, `www`, trailing slash, preview URLs). Preview deployments have different URLs; test on the production URL. |
-| `/api/...` returns the web app's HTML or a 404 page               | The `/api/:path*` rewrite is missing, comes after the fallback, or still contains `YOUR-RENDER-SERVICE`.                                                                                                    |
-| Refreshing `/products` gives 404                                  | The SPA fallback rewrite (`/(.*)` to `/index.html`) is missing from `vercel.json`.                                                                                                                          |
+| `/api/...` returns the web app's HTML or a 404 page               | The `/api/:path*` rewrite in `frontend/vercel.json` is missing, comes after the fallback, or has the wrong Render address.                                                                                  |
+| Refreshing `/products` gives 404                                  | The SPA fallback rewrite (`/(.*)` to `/index.html`) is missing from `frontend/vercel.json`.                                                                                                                 |
 | Everyone gets `429 RATE_LIMITED` quickly                          | `TRUST_PROXY_HOPS` is too low, so all visitors share one IP. Set it to `2` on Render.                                                                                                                       |
 | Render build fails with `tsc: not found` or `prisma: not found`   | Build command is missing `--include=dev`.                                                                                                                                                                   |
 | Deploy fails while starting, with a Prisma migration error        | `DATABASE_URL` is wrong, or the Neon database is unreachable or suspended. Run `npm run db:deploy -w backend` locally with the same value to see Prisma's message.                                          |
@@ -150,3 +157,9 @@ product, log out, refresh `/products` while signed out (it should redirect to `/
 - Migrations only move forward. To change the schema, add a new migration; never edit an applied one.
 - To roll back the app, redeploy a previous commit on Render/Vercel. The database keeps its schema.
 - Rotating `JWT_SECRET` signs everyone out (their cookies stop verifying), which is safe and instant.
+
+## Vercel build fails: "Cannot find module @meridio/contracts" or lockfile errors
+
+The Root Directory is `frontend`, so Vercel must be allowed to read files outside it. In the project
+settings under _Build and Deployment > Root Directory_, enable _Include source files outside of the
+Root Directory in the Build Step_, then redeploy.

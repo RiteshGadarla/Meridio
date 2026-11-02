@@ -216,7 +216,7 @@ One line per file. Updated every stage.
 
 | File                                                        | Purpose                                                                                                 |
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `vercel.json`                                               | Vercel build settings, `/api` rewrite to Render (before the SPA fallback), no rewrite caching           |
+| `frontend/vercel.json`                                      | Vercel build settings, `/api` rewrite to Render (before the SPA fallback), no rewrite caching           |
 | `render.yaml`                                               | Render Blueprint for the API (build, start that migrates first, health check, env vars)                 |
 | `docs/DEPLOYMENT.md`                                        | Click-path checklist, env table, troubleshooting                                                        |
 | `scripts/smoke-prod.mjs` (+ `.d.mts`)                       | Post-deploy smoke test (`npm run smoke:prod -- <url>`)                                                  |

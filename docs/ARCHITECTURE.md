@@ -68,9 +68,10 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for the steps. The design decisions:
 
 - **Same-origin API through a rewrite.** Vercel serves the SPA and rewrites `/api/*` to Render. The
   cookie is therefore first-party: `SameSite=Lax` is enough, no CORS credentials dance, and no
-  backend URL in the React code (it lives only in `vercel.json`).
-- **Repo-root builds.** npm workspaces share one lockfile and `packages/contracts` must compile
-  first, so both Render and Vercel build from the root.
+  backend URL in the React code (it lives only in `frontend/vercel.json`).
+- **Builds need the repo root.** npm workspaces share one lockfile and `packages/contracts` must
+  compile first. Render runs from the root; Vercel's Root Directory is `frontend/`, so its install and
+  build commands start with `cd ..`.
 - **One database variable.** `DATABASE_URL` is the only connection string. Runtime uses it as is
   (pooled recommended). `prisma migrate deploy` needs the direct address, which `prisma.config.ts`
   derives from the same URL. Migrations run at the start of `npm start`, so every deploy and cold start

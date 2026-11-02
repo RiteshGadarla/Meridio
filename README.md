@@ -1,26 +1,7 @@
 # StockFlow
 
 Multi-tenant inventory SaaS: organizations manage products, stock levels and low-stock alerts.
-Modular monolith (Express + Prisma) with a React SPA. Built stage by stage.
-
-## Status
-
-| Stage | Scope                             | Done |
-| ----- | --------------------------------- | :--: |
-| 0     | Monorepo, tooling                 | [x]  |
-| 1     | Database foundation               | [x]  |
-| 2     | Express API foundation            | [x]  |
-| 3     | Authentication and tenant context | [x]  |
-| 4     | Product API                       | [x]  |
-| 5     | Dashboard and settings API        | [x]  |
-| 6     | Design system and app shell       | [x]  |
-| 7     | Temporary auth UI                 | [x]  |
-| 8     | Dashboard UI                      | [x]  |
-| 9     | Product management UI             | [x]  |
-| 10    | Settings UI                       | [x]  |
-| 11    | E2E, a11y, coverage               | [x]  |
-| 12    | Production deployment             | [x]  |
-| 13    | Docs and demo polish              | [ ]  |
+Modular monolith (Express + Prisma) with a React SPA.
 
 ## Local setup
 
@@ -315,9 +296,6 @@ Auth flow notes (the login and signup pages are deliberately minimal; final visu
 - Any mutation that changes products or the default threshold must call
   `invalidateInventoryQueries(queryClient)` so the dashboard refreshes.
 
-![Dashboard screenshot](docs/screenshots/dashboard.png)
-<!-- TODO: add docs/screenshots/dashboard.png once captured against the seeded demo data. -->
-
 ## Products
 
 `/products` is the catalogue: search, sort, server-side pagination, add/edit drawer and delete.
@@ -338,9 +316,6 @@ Auth flow notes (the login and signup pages are deliberately minimal; final visu
 - **Delete** asks for confirmation naming the product and SKU; deleting the last row of the last page
   steps back one page.
 - Every create, update and delete refreshes the dashboard through `invalidateInventoryQueries`.
-
-![Products screenshot](docs/screenshots/products.png)
-<!-- TODO: add docs/screenshots/products.png once captured against the seeded demo data. -->
 
 ## Settings
 
@@ -437,19 +412,19 @@ StockFlow deploys as Neon (database) + Render (API) + Vercel (web). The browser 
 which rewrites `/api/*` to Render, so the session cookie is first-party.
 
 - Live app: `https://YOUR-APP.vercel.app` _(fill in after deploying)_
-- API health: `https://YOUR-RENDER-SERVICE.onrender.com/api/v1/health/ready`
+- API health: `https://meridio-g01d.onrender.com/api/v1/health/ready`
 
-| Where  | Variable           | Value                                           |
-| ------ | ------------------ | ----------------------------------------------- |
-| Render | `NODE_ENV`         | `production`                                    |
-| Render | `DATABASE_URL`     | Neon connection string (pooled recommended)     |
-| Render | `JWT_SECRET`       | 32+ random characters                           |
-| Render | `JWT_EXPIRES_IN`   | `7d`                                            |
-| Render | `APP_ORIGIN`       | the exact Vercel URL                            |
-| Render | `TRUST_PROXY_HOPS` | `2`                                             |
-| Vercel | _(none)_           | the backend address lives only in `vercel.json` |
+| Where  | Variable           | Value                                                    |
+| ------ | ------------------ | -------------------------------------------------------- |
+| Render | `NODE_ENV`         | `production`                                             |
+| Render | `DATABASE_URL`     | Neon connection string (pooled recommended)              |
+| Render | `JWT_SECRET`       | 32+ random characters                                    |
+| Render | `JWT_EXPIRES_IN`   | `7d`                                                     |
+| Render | `APP_ORIGIN`       | the exact Vercel URL                                     |
+| Render | `TRUST_PROXY_HOPS` | `2`                                                      |
+| Vercel | _(none)_           | the backend address lives only in `frontend/vercel.json` |
 
-Configuration files: [`vercel.json`](vercel.json), [`render.yaml`](render.yaml). Step-by-step
+Configuration files: [`frontend/vercel.json`](frontend/vercel.json), [`render.yaml`](render.yaml). Step-by-step
 click path, settings tables and troubleshooting: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 After deploying, verify with `npm run smoke:prod -- https://YOUR-APP.vercel.app`.

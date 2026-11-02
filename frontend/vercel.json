@@ -1,12 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm ci",
-  "buildCommand": "npm run build -w packages/contracts && npm run build -w frontend",
-  "outputDirectory": "frontend/dist",
+  "installCommand": "cd .. && npm ci",
+  "buildCommand": "cd .. && npm run build -w packages/contracts && npm run build -w frontend && node scripts/check-bundle.mjs frontend/dist",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/api/:path*"
+      "destination": "https://meridio-g01d.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",

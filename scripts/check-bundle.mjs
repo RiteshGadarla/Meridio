@@ -5,7 +5,7 @@
  *          ship to a browser: localhost URLs, database URLs, secrets, or the backend's host.
  * USAGE:   node scripts/check-bundle.mjs [dir]   (default frontend/dist). Runs at the end of
  *          `npm run build`.
- * NOTES:   The backend URL must exist ONLY in vercel.json; the browser calls relative /api/v1.
+ * NOTES:   The backend URL must exist ONLY in frontend/vercel.json; the browser calls relative /api/v1.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';

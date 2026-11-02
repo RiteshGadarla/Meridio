@@ -4,7 +4,7 @@
  *          the web bundle scan, secure cookies, error hygiene, proxy-aware rate limiting, and the
  *          smoke-test script run against a real production-mode server.
  * LAYER: Test (Supertest / real HTTP + Neon TEST database)
- * DEPENDS ON: ../../../vercel.json, ../../../render.yaml, ../../../scripts/*.mjs, app.ts
+ * DEPENDS ON: ../../../frontend/vercel.json, ../../../render.yaml, ../../../scripts/*.mjs, app.ts
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
@@ -27,7 +27,7 @@ afterAll(() => prisma.$disconnect());
 
 // Protects: the one place the backend URL lives, and the order that makes the SPA fallback safe.
 describe('vercel.json', () => {
-  const config = JSON.parse(readFileSync(join(root, 'vercel.json'), 'utf8')) as {
+  const config = JSON.parse(readFileSync(join(root, 'frontend/vercel.json'), 'utf8')) as {
     outputDirectory: string;
     buildCommand: string;
     installCommand: string;
@@ -41,7 +41,8 @@ describe('vercel.json', () => {
     const spa = sources.indexOf('/(.*)');
     expect(api).toBeGreaterThanOrEqual(0);
     expect(spa).toBeGreaterThan(api); // otherwise API calls would return index.html
-    expect(config.rewrites[api]!.destination).toMatch(/^https:\/\/.+\/api\/:path\*$/);
+    expect(config.rewrites[api]!.destination).toBe('https://meridio-g01d.onrender.com/api/:path*');
+    expect(JSON.stringify(config)).not.toContain('YOUR-RENDER-SERVICE'); // placeholder must be replaced
     expect(config.rewrites[spa]!.destination).toBe('/index.html');
   });
 
@@ -51,8 +52,12 @@ describe('vercel.json', () => {
     expect(config.buildCommand.indexOf('packages/contracts')).toBeLessThan(
       config.buildCommand.indexOf('-w frontend'),
     );
-    expect(config.outputDirectory).toBe('frontend/dist');
-    expect(config.installCommand).toBe('npm ci');
+    // Vercel's Root Directory is frontend/, so paths are relative to it: install and build step up
+    // to the repo root (npm workspaces + the contracts package live there), output is frontend/dist.
+    expect(config.outputDirectory).toBe('dist');
+    expect(config.installCommand).toBe('cd .. && npm ci');
+    expect(config.buildCommand.startsWith('cd .. && ')).toBe(true);
+    expect(config.buildCommand).toContain('scripts/check-bundle.mjs frontend/dist');
   });
 });
 
