@@ -11,7 +11,7 @@ Modular monolith (Express + Prisma) with a React SPA. Built stage by stage.
 | 1     | Database foundation               | [x]  |
 | 2     | Express API foundation            | [x]  |
 | 3     | Authentication and tenant context | [x]  |
-| 4     | Product API                       | [ ]  |
+| 4     | Product API                       | [x]  |
 | 5     | Dashboard and settings API        | [ ]  |
 | 6     | Design system and app shell       | [ ]  |
 | 7     | Temporary auth UI                 | [ ]  |
@@ -179,3 +179,30 @@ curl -b cookies.txt -c cookies.txt -X POST http://localhost:4000/api/v1/auth/log
   -H 'Content-Type: application/json' -d '{"email":"me@acme.test","password":"Passw0rdOK"}'
 curl -b cookies.txt http://localhost:4000/api/v1/auth/me
 ```
+
+## Product API
+
+Tenant-safe CRUD under `/api/v1/products`. Every query is filtered by the organization of the
+signed-in user, and another organization's product always answers `404`, never `403`.
+
+| Method | Path            | Purpose                                       |
+| ------ | --------------- | --------------------------------------------- |
+| GET    | `/products`     | List: search, status filter, sort, pagination |
+| POST   | `/products`     | Create                                        |
+| GET    | `/products/:id` | Read one                                      |
+| PATCH  | `/products/:id` | Partial update                                |
+| DELETE | `/products/:id` | Delete                                        |
+
+Every product carries a server-computed `stockStatus` (`HEALTHY`, `LOW_STOCK`, `OUT_OF_STOCK`) and
+`effectiveThreshold` (its own threshold, else the organization default). Prices are strings.
+
+```bash
+# search by name or SKU, only low-stock items, newest page 2
+curl -b cookies.txt 'http://localhost:4000/api/v1/products?search=key&status=LOW_STOCK&page=2&limit=10'
+
+curl -b cookies.txt -X POST http://localhost:4000/api/v1/products \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Mechanical Keyboard","sku":"KEY-002","quantityOnHand":12,"sellingPrice":"89.99"}'
+```
+
+See [docs/API.md](docs/API.md) for parameters, errors and example responses.

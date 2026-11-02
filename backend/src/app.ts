@@ -3,7 +3,7 @@
  * PURPOSE: Builds the Express application with the full middleware stack. Does NOT call listen().
  * LAYER: Composition root (Route -> Middleware -> Validation -> Controller -> Service -> Prisma)
  * USED BY: server.ts, tests (Supertest)
- * DEPENDS ON: express, helmet, cors, cookie-parser, pino-http, all middleware, health + auth modules
+ * DEPENDS ON: express, helmet, cors, cookie-parser, pino-http, all middleware, health + auth + products modules
  * NOTES: WHY no listen(): tests import createApp() and exercise it without opening a port.
  */
 import cookieParser from 'cookie-parser';
@@ -28,6 +28,7 @@ import { notFound } from './middleware/not-found.js';
 import { originCheck } from './middleware/origin-check.js';
 import { requestId } from './middleware/request-id.js';
 import { createHealthRouter, type DatabaseCheck } from './modules/health/health.routes.js';
+import { createProductsRouter } from './modules/products/index.js';
 
 /** Options mainly used by tests; production calls createApp() with no arguments. */
 export interface CreateAppOptions {
@@ -92,7 +93,14 @@ export function createApp(options: CreateAppOptions = {}): Express {
       limiters,
     }),
   );
-  // TODO(stage-4): products. TODO(stage-5): dashboard, settings.
+  api.use(
+    '/products',
+    createProductsRouter({
+      prisma: options.prisma ?? defaultPrisma,
+      jwt,
+    }),
+  );
+  // TODO(stage-5): dashboard, settings.
   options.mountRoutes?.(api);
 
   app.use('/api/v1', api);

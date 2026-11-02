@@ -69,11 +69,20 @@ One line per file. Updated every stage.
 | `src/modules/auth/auth.controller.ts`                              | HTTP layer for auth                                                              |
 | `src/modules/auth/auth.routes.ts`                                  | `/auth` routes wiring                                                            |
 | `test/api/auth.test.ts`                                            | End-to-end auth, tenant context and rate-limit tests                             |
+| `src/modules/inventory/stock-status.ts`                            | Single implementation of effective threshold and stock status                    |
+| `src/modules/inventory/stock-status.test.ts`                       | Table-driven tests for the stock status rule                                     |
+| `src/modules/inventory/index.ts`                                   | Public exports of the inventory module                                           |
+| `src/modules/products/products.service.ts`                         | Tenant-scoped product CRUD, search, sort, pagination, status filter              |
+| `src/modules/products/products.controller.ts`                      | HTTP layer for products                                                          |
+| `src/modules/products/products.routes.ts`                          | `/products` routes (all behind requireAuth)                                      |
+| `src/modules/products/index.ts`                                    | Exports `createProductsRouter`                                                   |
+| `test/api/products.test.ts`                                        | Product CRUD, search, pagination, sorting, status filter tests                   |
+| `test/api/tenant-isolation.test.ts`                                | Cross-tenant access, spoofing and SKU scoping tests                              |
 | `src/utils/app-error.ts`                                           | `AppError` with code, status, fieldErrors                                        |
 | `src/utils/api-response.ts`                                        | `ok()` success envelope helper                                                   |
 | `src/utils/async-handler.ts`                                       | Forwards async handler rejections to the error handler                           |
 | `src/modules/health/health.routes.ts`                              | `/health/live` and `/health/ready`                                               |
-| `src/modules/{products,dashboard,settings,inventory}/index.ts`     | Placeholders describing each future module                                       |
+| `src/modules/{dashboard,settings}/index.ts`                        | Placeholders for future modules                                                  |
 | `test/helpers.ts`                                                  | Builds a valid test Env and the real app with test-only routes                   |
 | `test/api/foundation.test.ts`                                      | Health, error shapes, headers, request id, origin check                          |
 | `test/api/error-handling.test.ts`                                  | Error mapping and `validate` middleware                                          |

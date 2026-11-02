@@ -122,3 +122,92 @@ Clears the cookie. Always `200 { "data": { "loggedOut": true } }`.
 
 Requires the cookie. `200` returns `AuthUser` with fresh organization data. `401 UNAUTHENTICATED`
 when the cookie is missing, tampered, expired, or its user no longer exists.
+
+## Products
+
+All product endpoints require the session cookie (`401 UNAUTHENTICATED` otherwise) and are scoped to
+the caller's organization. A product that belongs to another organization is reported as
+`404 NOT_FOUND`, exactly like a missing one. Any `organizationId` sent in a body or query is ignored.
+
+`ProductDto`:
+
+```json
+{
+  "id": "cm...",
+  "name": "Mechanical Keyboard",
+  "sku": "KEY-001",
+  "description": null,
+  "quantityOnHand": 12,
+  "costPrice": "45.00",
+  "sellingPrice": "89.99",
+  "lowStockThreshold": null,
+  "effectiveThreshold": 5,
+  "stockStatus": "HEALTHY",
+  "updatedById": "cm...",
+  "createdAt": "2026-11-02T10:00:00.000Z",
+  "updatedAt": "2026-11-02T10:00:00.000Z"
+}
+```
+
+Prices are strings (never floats). `effectiveThreshold` is the product's own threshold, or the
+organization default when `lowStockThreshold` is `null`. `stockStatus` is `OUT_OF_STOCK` at quantity
+0, `LOW_STOCK` when quantity <= `effectiveThreshold`, otherwise `HEALTHY`.
+
+| Method | Path            | Purpose                                        |
+| ------ | --------------- | ---------------------------------------------- |
+| GET    | `/products`     | List with search, filter, sort, pagination     |
+| POST   | `/products`     | Create (201)                                   |
+| GET    | `/products/:id` | Get one                                        |
+| PATCH  | `/products/:id` | Partial update (at least one field)            |
+| DELETE | `/products/:id` | Hard delete, `200 { "data": { "id": "..." } }` |
+
+### `GET /products`
+
+Query parameters: `page` (default 1), `limit` (default 20, max 100), `search` (name or SKU,
+case-insensitive, `%` and `_` are literal), `sort` (`createdAt` default, `name`, `sku`,
+`quantityOnHand`, `sellingPrice`), `order` (`asc` | `desc`, default `desc`), `status`
+(`HEALTHY` | `LOW_STOCK` | `OUT_OF_STOCK`).
+
+```
+GET /api/v1/products?search=key&status=LOW_STOCK&sort=name&order=asc&page=2&limit=10
+```
+
+```json
+{
+  "data": [{ "...": "ProductDto" }],
+  "meta": { "page": 2, "limit": 10, "total": 25, "totalPages": 3 }
+}
+```
+
+Errors: `400 VALIDATION_ERROR` for an unknown `sort`/`status`, `limit` above 100, or a bad `page`.
+
+### `POST /products`
+
+```json
+{
+  "name": "Mechanical Keyboard",
+  "sku": "key-001",
+  "quantityOnHand": 12,
+  "costPrice": "45.00",
+  "sellingPrice": 89.99,
+  "lowStockThreshold": 3
+}
+```
+
+Rules: name 1 to 120 characters; SKU is trimmed and uppercased (letters, digits, `. _ - /`, up to 64);
+description up to 2000; quantity an integer 0 to 1,000,000 (default 0); prices optional, not negative,
+at most 2 decimals, up to 9,999,999.99 (number or string accepted); threshold an optional integer >= 0.
+
+Errors: `400 VALIDATION_ERROR` with `fieldErrors`, `409 DUPLICATE_SKU` with
+`fieldErrors.sku = "This SKU already exists in your organization."` (the same SKU is allowed in
+different organizations).
+
+### `PATCH /products/:id`
+
+Any subset of the create fields. Sending `"lowStockThreshold": null` removes the override so the
+organization default applies again. An empty body is `400`. Sets `updatedById` to the caller.
+Errors: `404 NOT_FOUND`, `409 DUPLICATE_SKU`, `400 VALIDATION_ERROR`.
+
+### `DELETE /products/:id`
+
+Errors: `404 NOT_FOUND` (also for another organization's product).

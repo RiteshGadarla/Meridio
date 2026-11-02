@@ -1,7 +1,8 @@
 /**
  * FILE: backend/src/modules/products/index.ts
- * PURPOSE: Placeholder for the products module. Tenant-scoped product CRUD, search, sorting and pagination. Arrives in Stage 4.
- * LAYER: Module (routes -> controller -> service)
- * NOTES: Empty on purpose in Stage 2; keeps the folder structure from the plan visible.
+ * PURPOSE: Public exports of the products module. Exposes the router factory for app.ts.
+ * LAYER: Module
+ * USED BY: app.ts
+ * DEPENDS ON: ./products.routes.ts
  */
-export {};
+export { createProductsRouter } from './products.routes.js';

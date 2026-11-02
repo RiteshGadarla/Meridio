@@ -1,7 +1,9 @@
 /**
  * FILE: backend/src/modules/inventory/index.ts
- * PURPOSE: Placeholder for the inventory module. The single source of truth for stock status (stock-status.ts). Arrives in Stage 4.
- * LAYER: Module (routes -> controller -> service)
- * NOTES: Empty on purpose in Stage 2; keeps the folder structure from the plan visible.
+ * PURPOSE: Public exports of the inventory module. The single source of truth for stock status.
+ * LAYER: Module
+ * USED BY: products.service.ts, dashboard.service.ts (Stage 5)
+ * DEPENDS ON: ./stock-status.ts
  */
-export {};
+export { getEffectiveThreshold, getStockStatus } from './stock-status.js';
+export type { StockStatus } from './stock-status.js';
