@@ -48,7 +48,7 @@ interface ProductRow {
  * @param orgDefaultThreshold The organization's default low-stock threshold.
  * @returns A ProductDto ready for the API response.
  */
-function toProductDto(row: ProductRow, orgDefaultThreshold: number): ProductDto {
+export function toProductDto(row: ProductRow, orgDefaultThreshold: number): ProductDto {
   const effectiveThreshold = getEffectiveThreshold(row.lowStockThreshold, orgDefaultThreshold);
   const stockStatus = getStockStatus(row.quantityOnHand, effectiveThreshold);
   return {
@@ -71,7 +71,7 @@ function toProductDto(row: ProductRow, orgDefaultThreshold: number): ProductDto 
 
 // ===== Select clause (reusable across all product queries) =====
 
-const productSelect = {
+export const productSelect = {
   id: true,
   name: true,
   sku: true,

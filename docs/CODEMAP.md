@@ -82,7 +82,11 @@ One line per file. Updated every stage.
 | `src/utils/api-response.ts`                                        | `ok()` success envelope helper                                                   |
 | `src/utils/async-handler.ts`                                       | Forwards async handler rejections to the error handler                           |
 | `src/modules/health/health.routes.ts`                              | `/health/live` and `/health/ready`                                               |
-| `src/modules/{dashboard,settings}/index.ts`                        | Placeholders for future modules                                                  |
+| `src/modules/settings/settings.service.ts`                         | Read/update organization default threshold                                       |
+| `src/modules/settings/settings.routes.ts`                          | `/settings` routes and handlers                                                  |
+| `src/modules/dashboard/dashboard.service.ts`                       | SQL-level overview metrics and low-stock list                                    |
+| `src/modules/dashboard/dashboard.routes.ts`                        | `/dashboard/overview` route and handler                                          |
+| `test/api/dashboard-settings.test.ts`                              | Dashboard, settings and isolation tests                                          |
 | `test/helpers.ts`                                                  | Builds a valid test Env and the real app with test-only routes                   |
 | `test/api/foundation.test.ts`                                      | Health, error shapes, headers, request id, origin check                          |
 | `test/api/error-handling.test.ts`                                  | Error mapping and `validate` middleware                                          |

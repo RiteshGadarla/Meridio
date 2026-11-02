@@ -12,7 +12,7 @@ Modular monolith (Express + Prisma) with a React SPA. Built stage by stage.
 | 2     | Express API foundation            | [x]  |
 | 3     | Authentication and tenant context | [x]  |
 | 4     | Product API                       | [x]  |
-| 5     | Dashboard and settings API        | [ ]  |
+| 5     | Dashboard and settings API        | [x]  |
 | 6     | Design system and app shell       | [ ]  |
 | 7     | Temporary auth UI                 | [ ]  |
 | 8     | Dashboard UI                      | [ ]  |
@@ -206,3 +206,21 @@ curl -b cookies.txt -X POST http://localhost:4000/api/v1/products \
 ```
 
 See [docs/API.md](docs/API.md) for parameters, errors and example responses.
+
+## Dashboard and settings API
+
+| Method | Path                  | Purpose                                                              |
+| ------ | --------------------- | -------------------------------------------------------------------- |
+| GET    | `/dashboard/overview` | Total products, total units, low-stock count, "needs attention" list |
+| GET    | `/settings`           | Organization name and default low-stock threshold                    |
+| PATCH  | `/settings`           | Change the default low-stock threshold                               |
+
+Definitions, applied by one shared rule (`modules/inventory/stock-status.ts`):
+
+- **Out of stock**: quantity is 0.
+- **Low stock**: quantity is at or below the threshold (a product's own threshold, else the
+  organization default). Out-of-stock items also satisfy this, so the dashboard list is labelled
+  "Needs attention".
+- A product threshold of `0` is a real override: that product is never "low", only "out" at 0.
+
+Changing the default threshold takes effect on the next request, because status is computed on read.

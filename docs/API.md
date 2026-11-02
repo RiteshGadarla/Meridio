@@ -211,3 +211,47 @@ Errors: `404 NOT_FOUND`, `409 DUPLICATE_SKU`, `400 VALIDATION_ERROR`.
 ### `DELETE /products/:id`
 
 Errors: `404 NOT_FOUND` (also for another organization's product).
+
+## Dashboard
+
+### `GET /dashboard/overview`
+
+Requires the session cookie. Everything is scoped to the caller's organization.
+
+```json
+{
+  "data": {
+    "totalProducts": 14,
+    "totalUnits": 530,
+    "lowStockCount": 3,
+    "outOfStockCount": 1,
+    "lowStockProducts": [{ "...": "ProductDto" }]
+  }
+}
+```
+
+- **Low stock** means quantity <= the product's effective threshold (its own threshold, else the
+  organization default). This INCLUDES out-of-stock items, so the UI calls the list "Needs attention".
+- **Out of stock** means quantity 0 (always, even with a threshold of 0).
+- `lowStockProducts` holds at most 50 items, out-of-stock first, then lowest quantity, then name.
+  `lowStockCount` counts all of them, not just the 50 returned.
+- An organization with no products returns zeros and an empty list.
+- Totals use SQL aggregates, so nothing scales with catalogue size in memory.
+
+## Settings
+
+### `GET /settings`
+
+```json
+{ "data": { "defaultLowStockThreshold": 5, "organizationName": "Acme" } }
+```
+
+### `PATCH /settings`
+
+```json
+{ "defaultLowStockThreshold": 10 }
+```
+
+Returns the same shape as GET. The value must be an integer from 0 to 100,000. Products without their
+own threshold follow the new default on the very next request (status is computed on read).
+Errors: `400 VALIDATION_ERROR` with `fieldErrors.defaultLowStockThreshold`, `401 UNAUTHENTICATED`.
