@@ -32,7 +32,7 @@ describe('seedDatabase', () => {
   it('stores bcrypt hashes, never plaintext passwords', async () => {
     await seedDatabase(prisma);
     const users = await prisma.user.findMany();
-    expect(users.every((u) => u.passwordHash.startsWith('$2'))).toBe(true);
+    expect(users.every((u) => u.passwordHash?.startsWith('$2'))).toBe(true);
   });
 
   it('puts KEY-001 in both organizations', async () => {

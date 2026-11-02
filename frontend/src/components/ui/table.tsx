@@ -14,12 +14,19 @@ export function Table({
   caption,
   className,
   children,
+  centered,
   ...rest
-}: HTMLAttributes<HTMLTableElement> & { caption?: string }) {
+}: HTMLAttributes<HTMLTableElement> & { caption?: string; centered?: boolean }) {
   return (
     <div className="overflow-x-auto rounded-sm border border-sandstone bg-paper">
       <table
-        className={cn('w-full min-w-[40rem] border-collapse text-left text-sm', className)}
+        className={cn(
+          'w-full min-w-[40rem] border-collapse text-left text-sm',
+          // `centered` overrides the per-cell numeric right-alignment too (descendant selector
+          // outranks the single-class `text-right`), so headers and content share one axis.
+          centered && '[&_td]:text-center [&_th]:text-center',
+          className,
+        )}
         {...rest}
       >
         {caption && <caption className="sr-only">{caption}</caption>}

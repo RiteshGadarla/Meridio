@@ -9,9 +9,11 @@
 import type { ProductDto, ProductSortField } from '@meridio/contracts';
 import { ArrowDown, ArrowUp, ChevronsUpDown, Pencil, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ThresholdCell } from '../../components/threshold-cell';
 import { StatusBadge } from '../../components/ui/badge';
 import { Table, TBody, TD, TH, THead, TR } from '../../components/ui/table';
-import { formatCurrency, formatNumber } from '../../lib/format';
+import { formatNumber } from '../../lib/format';
+import { useMoney } from '../../lib/use-money';
 
 interface SortHeaderProps {
   label: string;
@@ -51,12 +53,13 @@ export interface ProductTableProps {
 }
 
 export function ProductTable({ products, sort, order, onSort, onDelete }: ProductTableProps) {
+  const money = useMoney();
   return (
-    <Table caption="Products">
+    <Table caption="Products" centered>
       <THead>
         <TR>
           <SortHeader label="Product" field="name" sort={sort} order={order} onSort={onSort} />
-          <TH>SKU</TH>
+          <SortHeader label="SKU" field="sku" sort={sort} order={order} onSort={onSort} />
           <SortHeader
             label="Quantity"
             field="quantityOnHand"
@@ -65,6 +68,7 @@ export function ProductTable({ products, sort, order, onSort, onDelete }: Produc
             numeric
             onSort={onSort}
           />
+          <TH numeric>Threshold</TH>
           <TH>Stock status</TH>
           <SortHeader
             label="Selling price"
@@ -86,19 +90,22 @@ export function ProductTable({ products, sort, order, onSort, onDelete }: Produc
               <p className="font-medium">{p.name}</p>
               <p className="font-data mt-0.5 text-xs text-graphite-soft sm:hidden">{p.sku}</p>
               {p.description && (
-                <p className="mt-0.5 line-clamp-1 max-w-xs text-xs text-graphite-soft">
+                <p className="mt-0.5 mx-auto line-clamp-1 max-w-xs text-xs text-graphite-soft">
                   {p.description}
                 </p>
               )}
             </TD>
             <TD mono>{p.sku}</TD>
             <TD numeric>{formatNumber(p.quantityOnHand)}</TD>
+            <TD numeric>
+              <ThresholdCell product={p} />
+            </TD>
             <TD>
               <StatusBadge status={p.stockStatus} />
             </TD>
-            <TD numeric>{formatCurrency(p.sellingPrice)}</TD>
+            <TD numeric>{money(p.sellingPrice)}</TD>
             <TD>
-              <div className="flex justify-end gap-1">
+              <div className="flex justify-center gap-1">
                 <Link
                   to={`/products?edit=${encodeURIComponent(p.id)}`}
                   aria-label={`Edit ${p.name}`}

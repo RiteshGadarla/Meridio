@@ -12,6 +12,7 @@ import express, { Router, type Express } from 'express';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import { loadEnv, type Env } from './config/env.js';
+import { createGoogleOAuthClient, type GoogleOAuthClient } from './lib/google-oauth.js';
 import { createJwtService } from './lib/jwt.js';
 import { createLogger } from './lib/logger.js';
 import { prisma as defaultPrisma } from './lib/prisma.js';
@@ -42,6 +43,8 @@ export interface CreateAppOptions {
   prisma?: PrismaClient;
   /** Auth rate limits. Defaults: on, except when NODE_ENV=test (so unrelated tests never trip them). */
   rateLimits?: RateLimitConfig;
+  /** Google client. Defaults to one built from GOOGLE_* env (null if unset); tests inject a fake. */
+  googleClient?: GoogleOAuthClient | null;
   /** TEST SEAM: lets a test mount extra routes inside the real middleware stack. */
   mountRoutes?: (router: Router) => void;
 }
@@ -91,6 +94,17 @@ export function createApp(options: CreateAppOptions = {}): Express {
       prisma: options.prisma ?? defaultPrisma,
       jwt,
       isProduction: env.NODE_ENV === 'production',
+      google:
+        options.googleClient !== undefined
+          ? options.googleClient
+          : createGoogleOAuthClient({
+              clientId: env.GOOGLE_CLIENT_ID,
+              clientSecret: env.GOOGLE_CLIENT_SECRET,
+              redirectUri:
+                env.GOOGLE_REDIRECT_URI ?? `${env.APP_ORIGIN}/api/v1/auth/google/callback`,
+            }),
+      jwtSecret: env.JWT_SECRET,
+      appOrigin: env.APP_ORIGIN,
       limiters,
     }),
   );

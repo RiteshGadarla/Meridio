@@ -25,15 +25,20 @@ export function Badge({ children, className }: { children: ReactNode; className?
 }
 
 const STATUS: Record<StockStatus, { label: string; classes: string }> = {
-  HEALTHY: { label: 'Healthy', classes: 'bg-status-healthy-tint text-[#2f6249]' },
-  LOW_STOCK: { label: 'Low stock', classes: 'bg-status-low-tint text-[#8a5320]' },
-  OUT_OF_STOCK: { label: 'Out of stock', classes: 'bg-status-out-tint text-[#8f3a31]' },
+  HEALTHY: { label: 'Healthy', classes: 'bg-status-healthy-tint text-status-healthy-ink' },
+  LOW_STOCK: { label: 'Low stock', classes: 'bg-status-low-tint text-status-low-ink' },
+  OUT_OF_STOCK: { label: 'Out of stock', classes: 'bg-status-out-tint text-status-out-ink' },
 };
 
 /** 12px square marker: filled = healthy, half-filled = low, hollow with diagonal = out. */
-function Marker({ status }: { status: StockStatus }) {
+export function Marker({ status, className }: { status: StockStatus; className?: string }) {
   return (
-    <svg viewBox="0 0 12 12" className="size-3 shrink-0" aria-hidden="true" data-marker={status}>
+    <svg
+      viewBox="0 0 12 12"
+      className={cn('size-3 shrink-0', className)}
+      aria-hidden="true"
+      data-marker={status}
+    >
       <rect
         x="0.75"
         y="0.75"

@@ -32,6 +32,10 @@ model Organization {
   // Fallback low-stock threshold for products with no threshold of their own.
   // CHECK >= 0 (see raw SQL migration).
   defaultLowStockThreshold Int      @default(5)
+  // Avatar look ({from,to,angle,symbol}) chosen at creation. Null on older rows (UI shows white on black).
+  avatar                   Json?
+  // Display currency (ISO 4217 code). Money is stored as plain decimals; this only affects formatting.
+  currency                 String   @default("INR")
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 
@@ -46,7 +50,16 @@ model User {
   id             String       @id @default(cuid())
   // Stored lowercase and trimmed by the app, so the plain @unique is effectively case-insensitive.
   email          String       @unique
-  passwordHash   String
+  // Null for accounts created through Google sign-in (they have no password). Password login
+  // for such an account always fails with the generic credentials error.
+  passwordHash   String?
+  // Google account id (the OIDC `sub`). Unique so one Google account maps to one user.
+  googleId       String?      @unique
+  // Display name and avatar URL from Google (or null for password accounts).
+  name           String?
+  pictureUrl     String?
+  // Initial-tile gradient ({from,to,angle,symbol}) chosen at creation. Null on older rows.
+  avatar         Json?
   organizationId String
   // Cascade: deleting an organization removes its users too.
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)

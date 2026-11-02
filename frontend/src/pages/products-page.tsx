@@ -11,9 +11,11 @@ import {
   listProductsQuerySchema,
   type ProductDto,
   type ProductSortField,
+  type StockStatus,
 } from '@meridio/contracts';
 import { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { ThresholdLegend } from '../components/threshold-cell';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { ConfirmDialog } from '../components/ui/confirm-dialog';
@@ -21,15 +23,22 @@ import { TableSkeleton } from '../components/ui/skeleton';
 import { EmptyState, ErrorState } from '../components/ui/states';
 import { useToast } from '../components/ui/toast';
 import { useDeleteProduct, useProducts } from '../features/products/hooks';
-import { Pagination } from '../features/products/pagination';
+import { PAGE_SIZES, Pagination } from '../features/products/pagination';
 import { ProductDrawer } from '../features/products/product-drawer';
 import { ProductTable } from '../features/products/product-table';
 import { SearchInput } from '../features/products/search-input';
 import { PageHeader } from '../layouts/page-header';
+import { cn } from '../lib/cn';
 import { ApiError } from '../lib/api-client';
 import { formatNumber } from '../lib/format';
 
-const PAGE_SIZE = 20;
+/** Status filter options; `undefined` means every status. */
+const STATUS_FILTERS: { value: StockStatus | undefined; label: string }[] = [
+  { value: undefined, label: 'All' },
+  { value: 'HEALTHY', label: 'Healthy' },
+  { value: 'LOW_STOCK', label: 'Low stock' },
+  { value: 'OUT_OF_STOCK', label: 'Out of stock' },
+];
 
 export function ProductsPage() {
   const [params, setParams] = useSearchParams();
@@ -43,15 +52,20 @@ export function ProductsPage() {
     search: params.get('search') ?? undefined,
     sort: params.get('sort') ?? undefined,
     order: params.get('order') ?? undefined,
+    status: params.get('status') ?? undefined,
+    limit: params.get('limit') ?? undefined,
   });
   const q = parsed.success ? parsed.data : listProductsQuerySchema.parse({});
   const search = q.search ?? '';
+  // Only the offered page sizes are honoured; anything else in the URL falls back to the default.
+  const limit = (PAGE_SIZES as readonly number[]).includes(q.limit) ? q.limit : PAGE_SIZES[0];
   const list = useProducts({
     page: q.page,
-    limit: PAGE_SIZE,
+    limit,
     search,
     sort: q.sort,
     order: q.order,
+    ...(q.status ? { status: q.status } : {}),
   });
 
   const update = useCallback(
@@ -68,6 +82,11 @@ export function ProductsPage() {
   );
 
   const onSearch = useCallback((value: string) => update({ search: value, page: null }), [update]); // new search -> page 1
+  const onStatus = (status: StockStatus | undefined) =>
+    update({ status: status ?? null, page: null });
+  const onPageSize = (size: number) => update({ limit: String(size), page: null });
+  const hasFilters = search !== '' || q.status !== undefined;
+  const clearFilters = () => update({ search: null, status: null, page: null });
   const onPage = (page: number) => update({ page: page <= 1 ? null : String(page) });
   const onSort = (field: ProductSortField) =>
     update({
@@ -113,7 +132,25 @@ export function ProductsPage() {
         }
       />
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div role="group" aria-label="Filter by status" className="flex flex-wrap gap-2">
+          {STATUS_FILTERS.map(({ value, label }) => (
+            <button
+              key={label}
+              type="button"
+              aria-pressed={q.status === value}
+              onClick={() => onStatus(value)}
+              className={cn(
+                'rounded-sm border px-3 py-1.5 text-sm font-medium transition-colors',
+                q.status === value
+                  ? 'border-forest bg-forest text-on-forest'
+                  : 'border-sandstone bg-paper text-graphite-soft hover:text-graphite',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <SearchInput value={search} onChange={onSearch} />
       </div>
 
@@ -126,7 +163,7 @@ export function ProductsPage() {
         />
       )}
 
-      {list.data && rows.length === 0 && search === '' && (
+      {list.data && rows.length === 0 && !hasFilters && (
         <EmptyState
           title="No products yet"
           description="Add your first product to start tracking stock levels."
@@ -134,13 +171,13 @@ export function ProductsPage() {
         />
       )}
 
-      {list.data && rows.length === 0 && search !== '' && (
+      {list.data && rows.length === 0 && hasFilters && (
         <EmptyState
-          title={`No results for “${search}”`}
-          description="Check the spelling, or try part of the name or SKU."
+          title={search ? `No results for “${search}”` : 'No products match this filter'}
+          description="Check the spelling, try part of the name or SKU, or change the status filter."
           action={
-            <Button variant="secondary" onClick={() => onSearch('')}>
-              Clear search
+            <Button variant="secondary" onClick={clearFilters}>
+              Clear filters
             </Button>
           }
         />
@@ -151,6 +188,7 @@ export function ProductsPage() {
           aria-busy={list.isPlaceholderData}
           className={list.isPlaceholderData ? 'opacity-70 transition-opacity' : undefined}
         >
+          <ThresholdLegend />
           <ProductTable
             products={rows}
             sort={q.sort}
@@ -158,7 +196,7 @@ export function ProductsPage() {
             onSort={onSort}
             onDelete={setPendingDelete}
           />
-          <Pagination meta={list.data.meta} onPage={onPage} />
+          <Pagination meta={list.data.meta} onPage={onPage} onPageSize={onPageSize} />
         </div>
       )}
 

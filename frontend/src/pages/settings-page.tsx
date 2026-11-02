@@ -41,6 +41,18 @@ export function SettingsPage() {
         )}
         {settings.data && <SettingsForm settings={settings.data} />}
       </section>
+
+      <p className="mt-16 border-t border-sandstone pt-6 text-sm text-graphite-soft">
+        StockFlow, built by{' '}
+        <a
+          href="https://gadarlaritesh.me"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-brand underline underline-offset-2"
+        >
+          Gadarla Ritesh
+        </a>
+      </p>
     </>
   );
 }

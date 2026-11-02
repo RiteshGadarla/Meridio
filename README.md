@@ -1,11 +1,69 @@
+<div align="center">
+
 # StockFlow
 
-Multi-tenant inventory SaaS: organizations manage products, stock levels and low-stock alerts.
-Modular monolith (Express + Prisma) with a React SPA.
+**Multi-tenant inventory management: products, stock levels and low-stock alerts, with strict tenant isolation.**
 
-## Local setup
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![React](https://img.shields.io/badge/React-Vite-61DAFB?logo=react&logoColor=black)](https://vite.dev)
+[![Node](https://img.shields.io/badge/Node-20%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?logo=postgresql&logoColor=white)](https://neon.tech)
 
-Prerequisites: Node 20+.
+[**Live app**](https://stockflow.gadarlaritesh.me/) · [Quick start](#quick-start) · [Features](#features) · [Architecture](#architecture) · [API docs](docs/API.md) · [Deployment](#deployment)
+
+</div>
+
+---
+
+## Overview
+
+StockFlow (repo code name _Meridio_) lets an organization manage its product catalogue, see what needs
+attention at a glance, and configure a default low-stock threshold. Each signup creates an isolated
+organization (the tenant); no user can ever read or modify another tenant's data.
+
+It is a modular monolith (Express + Prisma) with a React single-page app, and a shared contracts
+package so the browser and the API enforce identical validation rules.
+
+## Features
+
+- **Dashboard**: total products, total units and a "Needs attention" table of low and out-of-stock items
+- **Product management**: search by name or SKU, sorting, server-side pagination, add/edit drawer, safe delete
+- **Stock status**: one shared rule (`HEALTHY`, `LOW_STOCK`, `OUT_OF_STOCK`) computed on read, so threshold changes apply instantly
+- **Settings**: organization-wide default low-stock threshold, with per-product overrides
+- **Security first**: HttpOnly JWT cookie, bcrypt, rate limits, Origin checks, Helmet, redacted logs, 404 (never 403) across tenants
+- **Light and dark themes**: switch from the sidebar (or intro page footer); remembered per browser, follows the OS by default
+- **Industrial Editorial design system**: self-hosted fonts, accessible status markers (shape + label, never colour alone), reduced-motion support
+
+## Tech stack
+
+| Area     | Technology                                                                  |
+| -------- | --------------------------------------------------------------------------- |
+| Frontend | React, Vite, Tailwind CSS v4, React Router, TanStack Query, React Hook Form |
+| Backend  | Node, Express, Prisma, Zod, pino, Helmet, express-rate-limit                |
+| Database | PostgreSQL on Neon                                                          |
+| Shared   | `@meridio/contracts` (Zod schemas and types), npm workspaces                |
+| Testing  | Vitest, Supertest, React Testing Library, MSW                               |
+| Hosting  | Vercel (web), Render (API), Neon (database)                                 |
+
+## Architecture
+
+Request flow: `Route -> Middleware -> Validation (Zod) -> Controller -> Service -> Prisma -> PostgreSQL`.
+
+```text
+.
+├── frontend/             React + Vite + Tailwind CSS
+├── backend/              Express + TypeScript + Prisma
+├── packages/contracts/   Shared Zod schemas and types (@meridio/contracts)
+├── docs/                 API, architecture, code map, deployment
+└── scripts/              Build and production smoke checks
+```
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the file-by-file [docs/CODEMAP.md](docs/CODEMAP.md).
+
+## Quick start
+
+Prerequisites: Node 20+ and a Neon PostgreSQL database.
 
 ```bash
 npm install
@@ -13,21 +71,24 @@ cp backend/.env.example backend/.env     # then fill in secrets (see Database be
 cp frontend/.env.example frontend/.env
 npm run db:deploy                        # optional: `npm run dev` also applies migrations
 npm run db:seed                          # optional: load demo data (DEV ONLY)
-npm run dev     # API on :4000, web on :5173 (Vite proxies /api to the API)
+npm run dev                              # API on :4000, web on :5173 (Vite proxies /api)
 ```
 
-Run the API alone with `npm run dev -w backend`. It validates its environment on startup and exits
-with a readable list of invalid variable names (never values) if anything is missing.
+Open <http://localhost:5173> and log in with a seeded demo user, or create your own organization at `/signup`.
 
-Other scripts: `npm run build`, `lint`, `typecheck`, `test`, `format`.
+| Organization     | Email                  | Password       |
+| ---------------- | ---------------------- | -------------- |
+| Demo Store       | `demo@demostore.test`  | `DemoPass123`  |
+| Northwind Supply | `owner@northwind.test` | `NorthPass123` |
 
-## Layout
+> Demo logins are for development only. Never run the seed against production.
 
-- `frontend`: React + Vite + Tailwind CSS
-- `backend`: Express + TypeScript
-- `packages/contracts`: shared types and Zod schemas (`@meridio/contracts`), built to `dist` before backend and frontend
+The API validates its environment on startup and exits with a readable list of invalid variable names
+(never values). Other scripts: `npm run build`, `lint`, `typecheck`, `test`, `format`.
 
-See [docs/CODEMAP.md](docs/CODEMAP.md) for a file-by-file map.
+---
+
+# Documentation
 
 ## Database
 
@@ -97,17 +158,6 @@ erDiagram
 | `npm run db:seed`    | Load demo data (idempotent)                          |
 | `npm run db:studio`  | Open Prisma Studio                                   |
 | `npm run db:reset`   | Wipe and re-migrate the database (**destroys data**) |
-
-### Seeded demo logins (DEV ONLY)
-
-Never run the seed against production. These passwords are public.
-
-| Organization     | Email                  | Password       |
-| ---------------- | ---------------------- | -------------- |
-| Demo Store       | `demo@demostore.test`  | `DemoPass123`  |
-| Northwind Supply | `owner@northwind.test` | `NorthPass123` |
-
-`KEY-001` exists in both organizations to show that SKUs are unique per organization, not globally.
 
 ## API foundation
 
@@ -251,26 +301,9 @@ component and state. The route exists only in development builds.
 Routes so far: `/login`, `/signup` (placeholders), `/dashboard`, `/products`, `/settings` (page
 headers only), `/design` (dev), `/` redirects to `/dashboard`.
 
-## Run the app and log in
+## Sign-in flow
 
-```bash
-npm install
-cp backend/.env.example backend/.env      # then fill in the Neon URLs and a JWT_SECRET
-cp frontend/.env.example frontend/.env
-npm run db:seed                           # demo data (dev database only); tables are created by `npm run dev`
-npm run dev                               # web on :5173, API on :4000
-```
-
-Open <http://localhost:5173>. Log in with a seeded demo user (DEV ONLY, see the Database section):
-
-| Organization     | Email                  | Password       |
-| ---------------- | ---------------------- | -------------- |
-| Demo Store       | `demo@demostore.test`  | `DemoPass123`  |
-| Northwind Supply | `owner@northwind.test` | `NorthPass123` |
-
-Or create your own organization at `/signup`.
-
-Auth flow notes (the login and signup pages are deliberately minimal; final visuals come later):
+Behaviour of the login and signup pages:
 
 - A signed-out visit to any app page redirects to `/login` and returns you to that page after login.
 - A signed-in visit to `/login` or `/signup` goes to `/dashboard`.
@@ -411,7 +444,7 @@ component tests.
 StockFlow deploys as Neon (database) + Render (API) + Vercel (web). The browser only talks to Vercel,
 which rewrites `/api/*` to Render, so the session cookie is first-party.
 
-- Live app: `https://YOUR-APP.vercel.app` _(fill in after deploying)_
+- Live app: <https://stockflow.gadarlaritesh.me/>
 - API health: `https://meridio-g01d.onrender.com/api/v1/health/ready`
 
 | Where  | Variable           | Value                                                    |
@@ -427,7 +460,7 @@ which rewrites `/api/*` to Render, so the session cookie is first-party.
 Configuration files: [`frontend/vercel.json`](frontend/vercel.json), [`render.yaml`](render.yaml). Step-by-step
 click path, settings tables and troubleshooting: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-After deploying, verify with `npm run smoke:prod -- https://YOUR-APP.vercel.app`.
+After deploying, verify with `npm run smoke:prod -- https://stockflow.gadarlaritesh.me`.
 
 **Known limitation: cold starts.** Render's free plan sleeps after inactivity, and the first request
 afterwards can take up to about a minute. The app shows a "Waking up the server" notice after 5
@@ -435,3 +468,9 @@ seconds; open the API's `/api/v1/health/live` before a demo to wake it.
 
 `npm run build` also runs a bundle check that fails if the web build contains localhost URLs,
 database URLs, secrets or the backend's host.
+
+---
+
+## Author
+
+Built by **Gadarla Ritesh** ([gadarlaritesh.me](https://gadarlaritesh.me), [@RiteshGadarla](https://github.com/RiteshGadarla)).

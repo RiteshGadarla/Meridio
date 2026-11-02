@@ -8,11 +8,12 @@ import { formatCurrency, formatDate, formatNumber, NOT_SET } from './format';
 // Protects: prices from the API (strings) display correctly and missing prices are explicit.
 describe('formatCurrency', () => {
   it('formats a decimal string', () => {
-    expect(formatCurrency('1234.5')).toBe('$1,234.50');
+    expect(formatCurrency('1234.5')).toBe('₹1,234.50'); // rupees are the default
   });
   it('formats numbers and other currencies/locales', () => {
-    expect(formatCurrency(0)).toBe('$0.00');
-    expect(formatCurrency('1234.5', 'INR', 'en-IN')).toBe('₹1,234.50');
+    expect(formatCurrency(0)).toBe('₹0.00');
+    expect(formatCurrency('1234.5', 'USD')).toBe('$1,234.50');
+    expect(formatCurrency('1234567.5')).toBe('₹12,34,567.50'); // Indian digit grouping
   });
   it.each([null, undefined, '', 'abc'])('shows "Not set" for %s', (v) => {
     expect(formatCurrency(v)).toBe(NOT_SET);

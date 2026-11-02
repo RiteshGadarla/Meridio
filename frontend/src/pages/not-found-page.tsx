@@ -15,7 +15,7 @@ export function NotFoundPage() {
       <p className="mt-2 text-sm text-graphite-soft">That address does not exist in StockFlow.</p>
       <Link
         to="/dashboard"
-        className="mt-6 inline-block text-sm font-medium text-forest underline underline-offset-4"
+        className="mt-6 inline-block text-sm font-medium text-brand underline underline-offset-4"
       >
         Go to overview
       </Link>

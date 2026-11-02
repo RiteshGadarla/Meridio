@@ -33,6 +33,17 @@ const envSchema = z.object({
   APP_ORIGIN: z
     .url('must be a valid URL such as http://localhost:5173')
     .transform((v) => new URL(v).origin),
+  // Google sign-in is optional: when the id or secret is missing the button reports "unavailable"
+  // instead of the API refusing to start (local dev and tests need no Google credentials).
+  GOOGLE_CLIENT_ID: z.string().trim().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().trim().optional(),
+  // WHY optional: defaults to `${APP_ORIGIN}/api/v1/auth/google/callback`, which is correct both in
+  // dev (the Vite proxy) and in production (the Vercel rewrite). It must be registered in the
+  // Google Cloud console as an authorised redirect URI.
+  GOOGLE_REDIRECT_URI: z
+    .url()
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
 });
 
 export type Env = z.infer<typeof envSchema>;

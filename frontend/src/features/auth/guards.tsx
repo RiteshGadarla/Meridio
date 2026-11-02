@@ -75,7 +75,18 @@ export function AuthedShell() {
   const navigate = useNavigate();
   return (
     <AppShell
-      user={user ? { email: user.email, organizationName: user.organization.name } : undefined}
+      user={
+        user
+          ? {
+              email: user.email,
+              name: user.name,
+              pictureUrl: user.pictureUrl,
+              avatar: user.avatar,
+              organizationAvatar: user.organization.avatar,
+              organizationName: user.organization.name,
+            }
+          : undefined
+      }
       onLogout={() =>
         logout.mutate(undefined, { onSettled: () => navigate('/login', { replace: true }) })
       }

@@ -15,7 +15,16 @@ import { server } from './server';
 export const USER: AuthUser = {
   id: 'u1',
   email: 'me@acme.test',
-  organization: { id: 'o1', name: 'Acme', defaultLowStockThreshold: 5 },
+  name: null,
+  pictureUrl: null,
+  avatar: null,
+  organization: {
+    id: 'o1',
+    name: 'Acme',
+    defaultLowStockThreshold: 5,
+    currency: 'INR',
+    avatar: null,
+  },
 };
 
 /** Makes GET /auth/me answer with the user (signed in) or 401 (signed out). */

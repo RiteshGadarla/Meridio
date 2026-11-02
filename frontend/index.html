@@ -10,6 +10,15 @@
     />
     <!-- Deep Forest, so mobile browser chrome matches the brand -->
     <meta name="theme-color" content="#173F35" />
+    <!-- Apply the saved (or OS) theme before first paint so reloads never flash the wrong theme.
+         Keep the storage key in sync with src/lib/theme.tsx. -->
+    <script>
+      try {
+        var t = localStorage.getItem('stockflow-theme');
+        if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        if (t === 'dark') document.documentElement.classList.add('dark');
+      } catch (e) {}
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="StockFlow" />

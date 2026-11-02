@@ -5,7 +5,13 @@
  * USED BY: features/auth/hooks.ts
  * DEPENDS ON: lib/api-client.ts, @meridio/contracts
  */
-import type { AuthUser, LoginInput, SignupInput } from '@meridio/contracts';
+import type {
+  AuthUser,
+  GoogleCompleteInput,
+  GooglePendingProfile,
+  LoginInput,
+  SignupInput,
+} from '@meridio/contracts';
 import { ApiError, api } from '../../lib/api-client';
 
 /** SECURITY: credentials go in the POST body over the same-origin /api proxy, never in a URL. */
@@ -31,3 +37,13 @@ export async function fetchCurrentUser(): Promise<AuthUser | null> {
     throw error;
   }
 }
+
+/** Where the browser is sent to start Google sign-in (a full-page navigation, not an XHR). */
+export const GOOGLE_START_URL = '/api/v1/auth/google';
+
+/** Who the half-signed-up Google user is. A 401 means the 10-minute pending cookie expired. */
+export const fetchGooglePending = () =>
+  api.get<GooglePendingProfile>('/auth/google/pending', { skipUnauthorizedHandler: true });
+
+export const completeGoogleSignup = (input: GoogleCompleteInput) =>
+  api.post<AuthUser>('/auth/google/complete', input, { skipUnauthorizedHandler: true });

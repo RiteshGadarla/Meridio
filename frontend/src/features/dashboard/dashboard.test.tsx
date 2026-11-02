@@ -97,16 +97,96 @@ describe('DashboardPage', () => {
     const rows = within(table).getAllByRole('row').slice(1);
     expect(rows).toHaveLength(2);
     expect(within(rows[0]!).getByText('Low stock')).toBeInTheDocument();
-    expect(within(rows[0]!).queryByText('default')).not.toBeInTheDocument(); // own threshold 10
+    expect(within(rows[0]!).queryByText('Org default')).not.toBeInTheDocument(); // own threshold 10
     expect(within(rows[1]!).getByText('Out of stock')).toBeInTheDocument();
-    expect(within(rows[1]!).getByText('default')).toBeInTheDocument(); // inherited from org
+    expect(within(rows[1]!).getByText('Org default')).toBeInTheDocument(); // inherited from org
   });
 
-  it('navigates to /products?edit=ID from a row click and from the Edit link', async () => {
+  // Protects: the attention list can be narrowed by status and by name/SKU without a refetch.
+  it('filters the attention table by status and search, with a clear action', async () => {
     serve(overview());
-    fakeProductsApi([makeProduct(1, { id: 'p1', name: 'USB-C Hub' })]);
+    renderApp('/dashboard');
+    const table = await screen.findByRole('table', { name: 'Products that need attention' });
+    expect(within(table).getAllByRole('row')).toHaveLength(3);
+
+    await userEvent.click(screen.getByRole('button', { name: /^Out of stock/ }));
+    expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(2);
+
+    await userEvent.type(screen.getByRole('searchbox'), 'zzz-nothing');
+    expect(screen.getByText('No matching products')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+    expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(3);
+  });
+
+  // Protects: the list never shows more rows than the chosen page size, and Next/Previous work.
+  it('paginates the attention table with a rows-per-page setting', async () => {
+    const many = Array.from({ length: 12 }, (_, i) =>
+      product({ id: `p${i}`, name: `Item ${i}`, sku: `SKU-${i}` }),
+    );
+    serve(overview({ lowStockCount: 12, lowStockProducts: many }));
+    renderApp('/dashboard');
+    await screen.findByRole('table', { name: 'Products that need attention' });
+    expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(11); // 10 + header
+
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(3); // 2 + header
+
+    await userEvent.selectOptions(screen.getByLabelText('Rows per page'), '25');
+    expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(13);
+  });
+
+  // Protects: healthy products are reachable from the dashboard (they are not in the overview list).
+  it('"All products" loads the full catalogue from the products API', async () => {
+    serve(overview({ totalProducts: 3 }));
+    fakeProductsApi([
+      makeProduct(1, { name: 'Healthy Cable' }),
+      makeProduct(2, { name: 'Healthy Dock' }),
+    ]);
+    renderApp('/dashboard');
+    await userEvent.click(await screen.findByRole('button', { name: /^All products/ }));
+    expect(await screen.findByText('Healthy Cable')).toBeInTheDocument();
+    expect(screen.getByText('Healthy Dock')).toBeInTheDocument();
+  });
+
+  // Protects: column headers sort the table, toggling direction and reporting it via aria-sort.
+  it('sorts by clicking a column header and toggles the direction', async () => {
+    serve(overview());
+    renderApp('/dashboard');
+    await screen.findByRole('table', { name: 'Products that need attention' });
+    const names = () =>
+      within(screen.getByRole('table'))
+        .getAllByRole('row')
+        .slice(1)
+        .map((r) => within(r).getAllByRole('cell')[0]!.textContent);
+
+    await userEvent.click(screen.getByRole('button', { name: /^Product/ }));
+    const asc = names();
+    expect(asc).toEqual([...asc].sort((a, b) => a!.localeCompare(b!)));
+    expect(screen.getByRole('columnheader', { name: /^Product/ })).toHaveAttribute(
+      'aria-sort',
+      'ascending',
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /^Product/ }));
+    expect(names()).toEqual([...asc].reverse());
+  });
+
+  // Protects: a row click opens a read-only details pop-up; only the Edit control navigates.
+  it('opens a product info pop-up on row click without navigating, and Edit goes to the drawer', async () => {
+    serve(overview());
     renderApp('/dashboard');
     await userEvent.click(await screen.findByText('USB-C Hub'));
+    const dialog = await screen.findByRole('dialog', { name: 'USB-C Hub' });
+    expect(within(dialog).getByText('Quantity on hand')).toBeInTheDocument();
+    expect(within(dialog).getByText('Cost price')).toBeInTheDocument();
+    expect(screen.getByTestId('path').textContent).toBe('/dashboard');
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    fakeProductsApi([makeProduct(1, { id: 'p1', name: 'USB-C Hub' })]);
+    await userEvent.click(screen.getByRole('link', { name: 'Edit USB-C Hub' }));
     await waitFor(() => expect(screen.getByTestId('path').textContent).toBe('/products'));
     expect(screen.getByTestId('search').textContent).toBe('?edit=p1');
   });

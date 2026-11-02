@@ -34,6 +34,7 @@ export function useUpdateSettings() {
               organization: {
                 ...user.organization,
                 defaultLowStockThreshold: settings.defaultLowStockThreshold,
+                currency: settings.currency,
               },
             }
           : user,

@@ -45,13 +45,17 @@ describe('list', () => {
       'Product',
       'SKU',
       'Quantity',
+      'Threshold',
       'Stock status',
       'Selling price',
       'Actions',
     ]);
     const [, kb, lamp] = within(table).getAllByRole('row');
     expect(within(kb!).getByText('1,200')).toBeInTheDocument();
-    expect(within(kb!).getByText('$89.50')).toBeInTheDocument();
+    expect(within(kb!).getByText('₹89.50')).toBeInTheDocument();
+    // Inherited threshold shows the building symbol's text alternative plus the number.
+    expect(within(kb!).getByText('Org default')).toBeInTheDocument();
+    expect(within(kb!).getByText('5')).toBeInTheDocument();
     expect(within(lamp!).getByText('Not set')).toBeInTheDocument();
     expect(within(lamp!).getByText('Out of stock')).toBeInTheDocument();
     expect(screen.getByText('2 products')).toBeInTheDocument();
@@ -118,7 +122,7 @@ describe('search and URL state', () => {
   it('restores state from the URL on load (search, page, sort)', async () => {
     const rec = fakeProductsApi(many(30));
     renderApp('/products?page=2&sort=name&order=desc');
-    await screen.findByText('Product 21');
+    await screen.findByText('Product 11');
     const url = rec.listUrls.at(-1)!;
     expect([
       url.searchParams.get('page'),
@@ -145,22 +149,41 @@ describe('search and URL state', () => {
 
 describe('pagination', () => {
   it('next and previous request the right pages and disable at the bounds', async () => {
-    const rec = fakeProductsApi(many(45)); // 3 pages of 20
+    const rec = fakeProductsApi(many(25)); // 3 pages of 10 (the default page size)
     renderApp('/products');
     await screen.findByText('Product 1');
     const prev = screen.getByRole('button', { name: 'Previous' });
     const next = screen.getByRole('button', { name: 'Next' });
     expect(prev).toBeDisabled();
-    expect(screen.getByText(/Page 1 of 3 · 45 products/)).toBeInTheDocument();
+    expect(screen.getByText(/Page 1 of 3 · 25 products/)).toBeInTheDocument();
 
     await userEvent.click(next);
-    await screen.findByText('Product 21');
+    await screen.findByText('Product 11');
     expect(rec.listUrls.at(-1)?.searchParams.get('page')).toBe('2');
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
-    await screen.findByText('Product 41');
+    await screen.findByText('Product 21');
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
     await userEvent.click(screen.getByRole('button', { name: 'Previous' }));
-    await screen.findByText('Product 21');
+    await screen.findByText('Product 11');
+  });
+});
+
+// Protects: status filter and rows-per-page live in the URL and reach the API.
+describe('filter and page size', () => {
+  it('the status chips and rows-per-page select send status and limit to the API', async () => {
+    const rec = fakeProductsApi(many(30));
+    renderApp('/products');
+    await screen.findByText('Product 1');
+    await userEvent.click(screen.getByRole('button', { name: 'Low stock' }));
+    await waitFor(() => expect(rec.listUrls.at(-1)?.searchParams.get('status')).toBe('LOW_STOCK'));
+    expect(screen.getByRole('button', { name: 'Low stock' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'All' }));
+    await userEvent.selectOptions(screen.getByLabelText('Rows per page'), '25');
+    await waitFor(() => expect(rec.listUrls.at(-1)?.searchParams.get('limit')).toBe('25'));
   });
 });
 
@@ -399,11 +422,11 @@ describe('delete', () => {
   });
 
   it('deleting the last item on the last page moves back a page', async () => {
-    const rec = fakeProductsApi(many(21)); // page 2 holds only Product 21
+    const rec = fakeProductsApi(many(11)); // page 2 holds only Product 11
     renderApp('/products?page=2');
-    await userEvent.click(await screen.findByRole('button', { name: 'Delete Product 21' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete Product 11' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Delete product' }));
-    await waitFor(() => expect(rec.deletes).toEqual(['p21']));
+    await waitFor(() => expect(rec.deletes).toEqual(['p11']));
     await waitFor(() => expect(search()).not.toContain('page=2'));
     expect(await screen.findByText('Product 1')).toBeInTheDocument();
   });

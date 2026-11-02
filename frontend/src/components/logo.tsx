@@ -18,7 +18,7 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-/** Mark + name. Inherits text colour (limestone on the sidebar). */
+/** Mark + name. Inherits text colour (on-forest on the sidebar). */
 export function Logo({ className }: { className?: string }) {
   return (
     <span className={cn('inline-flex items-center gap-2.5', className)}>

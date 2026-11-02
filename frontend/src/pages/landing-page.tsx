@@ -13,11 +13,13 @@
 import { PRODUCT_NAME, type StockStatus } from '@meridio/contracts';
 import { Link } from 'react-router-dom';
 import { Logo } from '../components/logo';
+import { ThemeToggle } from '../components/theme-toggle';
 import MagicRings from '../components/magic-rings/magic-rings';
 import { StatusBadge } from '../components/ui/badge';
 import { buttonStyles } from '../components/ui/button';
 import { Table, TBody, TD, TH, THead, TR } from '../components/ui/table';
 import { useCurrentUser } from '../features/auth/hooks';
+import { useTheme } from '../lib/theme';
 
 const EXAMPLE_ROWS: {
   name: string;
@@ -62,6 +64,7 @@ function Eyebrow({ children, centered = false }: { children: string; centered?: 
 
 export function LandingPage() {
   const { data: user } = useCurrentUser();
+  const { theme } = useTheme();
 
   return (
     <div className="min-h-dvh">
@@ -76,8 +79,8 @@ export function LandingPage() {
           */}
           <div aria-hidden="true" className="absolute inset-0 -z-20 opacity-45 sm:opacity-100">
             <MagicRings
-              theme="light"
-              color="#173F35"
+              theme={theme}
+              color={theme === 'dark' ? '#8FCDB3' : '#173F35'}
               colorTwo="#C46B48"
               motion="pulse"
               ringCount={6}
@@ -101,12 +104,12 @@ export function LandingPage() {
           */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,rgb(243_241_233/0.92)_0%,rgb(243_241_233/0.7)_28%,transparent_60%)]"
+            className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,color-mix(in_srgb,var(--color-limestone)_92%,transparent)_0%,color-mix(in_srgb,var(--color-limestone)_70%,transparent)_28%,transparent_60%)]"
           />
 
           {/* Layer 3, the copy */}
           <div className="mx-auto w-full max-w-3xl px-4 py-16 text-center sm:px-6">
-            <Logo className="mb-12 text-forest" />
+            <Logo className="mb-12 text-brand" />
             <Eyebrow centered>Inventory control</Eyebrow>
             <h1 className="mx-auto max-w-2xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
               Know what is on your shelves before it runs out.
@@ -235,8 +238,20 @@ export function LandingPage() {
       {/* ===== Footer ===== */}
       <footer className="border-t border-sandstone">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-8 text-sm text-graphite-soft sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
-          <Logo className="text-forest" />
+          <Logo className="text-brand" />
           <p>Inventory control for teams that count things.</p>
+          <ThemeToggle label className="text-graphite-soft hover:text-graphite" />
+          <p>
+            Built by{' '}
+            <a
+              href="https://gadarlaritesh.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-brand underline underline-offset-2"
+            >
+              Gadarla Ritesh
+            </a>
+          </p>
         </div>
       </footer>
     </div>

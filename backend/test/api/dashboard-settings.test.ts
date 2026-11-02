@@ -181,7 +181,11 @@ describe('settings', () => {
   it('GET returns the default threshold and organization name', async () => {
     const res = await request(app).get('/api/v1/settings').set('Cookie', a.cookie);
     expect(res.status).toBe(200);
-    expect(res.body.data).toEqual({ defaultLowStockThreshold: 5, organizationName: 'Org A' });
+    expect(res.body.data).toEqual({
+      defaultLowStockThreshold: 5,
+      currency: 'INR', // rupees by default
+      organizationName: 'Org A',
+    });
   });
 
   // Why: status is computed on read, so a settings change must show on the very next call.
@@ -192,6 +196,19 @@ describe('settings', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.defaultLowStockThreshold).toBe(10);
     expect((await overview(a)).body.data.lowStockCount).toBe(1);
+  });
+
+  // Protects: the display currency is an allow-listed, per-organization setting.
+  it('PATCH changes the currency and rejects unsupported codes', async () => {
+    const ok = await patchSettings(a, { defaultLowStockThreshold: 5, currency: 'USD' });
+    expect(ok.status).toBe(200);
+    expect(ok.body.data.currency).toBe('USD');
+    const me = await request(app).get('/api/v1/auth/me').set('Cookie', a.cookie);
+    expect(me.body.data.organization.currency).toBe('USD');
+
+    const bad = await patchSettings(a, { defaultLowStockThreshold: 5, currency: 'XYZ' });
+    expect(bad.status).toBe(400);
+    expect(bad.body.error.fieldErrors.currency).toBeTruthy();
   });
 
   it.each([

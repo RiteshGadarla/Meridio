@@ -17,6 +17,7 @@ import {
   SessionWatcher,
 } from '../features/auth/guards';
 import { DashboardPage } from '../pages/dashboard-page';
+import { GoogleOrganizationPage } from '../pages/google-organization-page';
 import { LandingPage } from '../pages/landing-page';
 import { LoginPage } from '../pages/login-page';
 import { NotFoundPage } from '../pages/not-found-page';
@@ -35,6 +36,7 @@ export function AppRoutes() {
         <Route element={<RedirectIfAuthed />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/signup/organization" element={<GoogleOrganizationPage />} />
         </Route>
         <Route element={<RequireAuth />}>
           <Route element={<AuthedShell />}>

@@ -7,19 +7,22 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
+import { ThemeProvider } from '../lib/theme';
 import { AppShell } from './app-shell';
 
 function renderShell(path = '/products', props: Parameters<typeof AppShell>[0] = {}) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route element={<AppShell {...props} />}>
-          <Route path="/dashboard" element={<p>dash</p>} />
-          <Route path="/products" element={<p>prods</p>} />
-          <Route path="/settings" element={<p>sets</p>} />
-        </Route>
-      </Routes>
-    </MemoryRouter>,
+    <ThemeProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route element={<AppShell {...props} />}>
+            <Route path="/dashboard" element={<p>dash</p>} />
+            <Route path="/products" element={<p>prods</p>} />
+            <Route path="/settings" element={<p>sets</p>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </ThemeProvider>,
   );
 }
 
@@ -61,5 +64,30 @@ describe('AppShell', () => {
       'false',
     );
     expect(screen.getByText('sets')).toBeInTheDocument();
+  });
+
+  // Protects: the theme switch works, persists the choice and sets the class the tokens key off.
+  it('toggles the dark theme and remembers it', async () => {
+    localStorage.clear();
+    renderShell('/dashboard');
+    await userEvent.click(screen.getByRole('button', { name: 'Switch to dark theme' }));
+    expect(document.documentElement).toHaveClass('dark');
+    expect(localStorage.getItem('stockflow-theme')).toBe('dark');
+    await userEvent.click(screen.getByRole('button', { name: 'Switch to light theme' }));
+    expect(document.documentElement).not.toHaveClass('dark');
+  });
+
+  // Protects: the collapse control reports its state and the choice is remembered.
+  it('collapses and expands the sidebar and remembers it', async () => {
+    localStorage.clear();
+    renderShell('/dashboard');
+    await userEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+    expect(localStorage.getItem('stockflow-sidebar-collapsed')).toBe('1');
+    expect(screen.getByRole('button', { name: 'Expand sidebar' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Expand sidebar' }));
+    expect(localStorage.getItem('stockflow-sidebar-collapsed')).toBe('0');
   });
 });

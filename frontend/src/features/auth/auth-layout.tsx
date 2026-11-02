@@ -23,7 +23,7 @@ export function AuthLayout({ title, children }: { title: string; children: React
         Back to home
       </Link>
       <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-4 py-12">
-        <Logo className="mb-8 text-forest" />
+        <Logo className="mb-8 text-brand" />
         <h1 className="mb-6 text-2xl font-semibold tracking-tight">{title}</h1>
         {children}
       </main>

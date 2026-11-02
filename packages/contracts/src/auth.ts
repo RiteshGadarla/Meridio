@@ -8,6 +8,7 @@
  *        for instant feedback, so the two can never disagree.
  */
 import { z } from 'zod';
+import type { Currency } from './settings.js';
 
 // ===== Field rules =====
 
@@ -58,6 +59,12 @@ export const signupFormSchema = signupSchema
   });
 
 /**
+ * Request body of POST /auth/google/complete: the second step of Google signup, where a brand-new
+ * Google user names their organization. Reuses the signup rule so the two never disagree.
+ */
+export const googleCompleteSchema = signupSchema.pick({ organizationName: true });
+
+/**
  * Request body of POST /auth/login.
  * EDGE CASE: only "non-empty" is checked for the password, so an old weak password can still log in.
  */
@@ -66,15 +73,69 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+// ===== Avatar =====
+
+/** Symbols an organization avatar can show. The web app maps each name to an icon. */
+export const AVATAR_SYMBOLS = [
+  'boxes',
+  'package',
+  'warehouse',
+  'store',
+  'factory',
+  'layers',
+  'container',
+  'shopping-bag',
+] as const;
+
+export type AvatarSymbol = (typeof AVATAR_SYMBOLS)[number];
+
+/**
+ * Stored look of an avatar tile, chosen once when the account/organization is created so it never
+ * changes later. `null` (older rows) renders as white-on-black.
+ */
+export interface AvatarStyle {
+  /** CSS colour, e.g. "hsl(210 62% 42%)". */
+  from: string;
+  to: string;
+  /** Gradient angle in degrees. */
+  angle: number;
+  symbol: AvatarSymbol;
+}
+
 // ===== Types =====
 
 export type SignupInput = z.infer<typeof signupSchema>;
 export type SignupFormInput = z.infer<typeof signupFormSchema>;
+export type GoogleCompleteInput = z.infer<typeof googleCompleteSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 
 /** The signed-in user and their organization, as returned by signup, login and /auth/me. */
 export interface AuthUser {
   id: string;
   email: string;
-  organization: { id: string; name: string; defaultLowStockThreshold: number };
+  /** Display name from Google; null for password accounts. */
+  name: string | null;
+  /** Avatar URL from Google; null for password accounts. */
+  pictureUrl: string | null;
+  /** Gradient look of the user's initial tile; null renders white-on-black. */
+  avatar: AvatarStyle | null;
+  organization: {
+    id: string;
+    name: string;
+    defaultLowStockThreshold: number;
+    /** Display currency for money values. */
+    currency: Currency;
+    /** Gradient + symbol of the organization tile; null renders white-on-black. */
+    avatar: AvatarStyle | null;
+  };
+}
+
+/**
+ * What the API knows about a Google user who has authenticated but not yet created an organization
+ * (GET /auth/google/pending). Lets the "name your organization" page greet them.
+ */
+export interface GooglePendingProfile {
+  email: string;
+  name: string | null;
+  pictureUrl: string | null;
 }

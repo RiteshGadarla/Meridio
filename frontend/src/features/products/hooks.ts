@@ -18,8 +18,9 @@ import {
 } from './api';
 
 /** Paginated, searchable list. keepPreviousData stops the table flashing empty between pages. */
-export function useProducts(params: ProductListParams) {
+export function useProducts(params: ProductListParams, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: ['products', 'list', params],
     queryFn: ({ signal }) => listProducts(params, signal),
     placeholderData: keepPreviousData,

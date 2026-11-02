@@ -10,6 +10,7 @@ import type {
   PaginationMeta,
   ProductDto,
   ProductSortField,
+  StockStatus,
   UpdateProductInput,
 } from '@meridio/contracts';
 import { api, request } from '../../lib/api-client';
@@ -21,6 +22,8 @@ export interface ProductListParams {
   search: string;
   sort: ProductSortField;
   order: 'asc' | 'desc';
+  /** Optional stock status filter (the API supports it; empty = all). */
+  status?: StockStatus;
 }
 
 export interface ProductPage {

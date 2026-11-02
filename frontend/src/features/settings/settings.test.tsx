@@ -17,13 +17,19 @@ function serveSettings(value = 5) {
   const patches: unknown[] = [];
   server.use(
     http.get('*/api/v1/settings', () =>
-      HttpResponse.json({ data: { defaultLowStockThreshold: value, organizationName: 'Acme' } }),
+      HttpResponse.json({
+        data: { defaultLowStockThreshold: value, currency: 'INR', organizationName: 'Acme' },
+      }),
     ),
     http.patch('*/api/v1/settings', async ({ request }) => {
       const body = (await request.json()) as { defaultLowStockThreshold: number };
       patches.push(body);
       return HttpResponse.json({
-        data: { defaultLowStockThreshold: body.defaultLowStockThreshold, organizationName: 'Acme' },
+        data: {
+          defaultLowStockThreshold: body.defaultLowStockThreshold,
+          currency: 'INR',
+          organizationName: 'Acme',
+        },
       });
     }),
   );
@@ -88,7 +94,9 @@ describe('SettingsPage', () => {
       }),
     );
 
-    await waitFor(() => expect(patches).toEqual([{ defaultLowStockThreshold: 12 }]));
+    await waitFor(() =>
+      expect(patches).toEqual([{ defaultLowStockThreshold: 12, currency: 'INR' }]),
+    );
     expect(await screen.findByText('Settings saved')).toBeInTheDocument();
     expect(await screen.findByText('Saved')).toBeInTheDocument();
     expect(client.getQueryData<typeof USER>(AUTH_KEY)?.organization.defaultLowStockThreshold).toBe(
@@ -193,7 +201,9 @@ describe('SettingsPage', () => {
       http.get('*/api/v1/settings', () =>
         ++n === 1
           ? HttpResponse.json({ error: { code: 'INTERNAL_ERROR', message: 'x' } }, { status: 500 })
-          : HttpResponse.json({ data: { defaultLowStockThreshold: 5, organizationName: 'Acme' } }),
+          : HttpResponse.json({
+              data: { defaultLowStockThreshold: 5, currency: 'INR', organizationName: 'Acme' },
+            }),
       ),
     );
     renderApp('/settings');

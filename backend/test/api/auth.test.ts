@@ -49,6 +49,21 @@ describe('POST /auth/signup', () => {
     expect(cookieOf(res)).toMatch(/Secure/i);
   });
 
+  // Protects: the avatar look is chosen once at signup and stored, so it never changes later.
+  it('stores a random avatar for the new user and organization', async () => {
+    const res = await post(app, '/signup').send(creds);
+    for (const avatar of [res.body.data.avatar, res.body.data.organization.avatar]) {
+      expect(avatar).toMatchObject({
+        from: expect.stringMatching(/^hsl\(/),
+        to: expect.stringMatching(/^hsl\(/),
+        angle: expect.any(Number),
+        symbol: expect.any(String),
+      });
+    }
+    const org = await prisma.organization.findFirstOrThrow();
+    expect(org.avatar).toEqual(res.body.data.organization.avatar);
+  });
+
   it('stores a bcrypt hash, not the password', async () => {
     await post(app, '/signup').send(creds);
     const user = await prisma.user.findFirstOrThrow();

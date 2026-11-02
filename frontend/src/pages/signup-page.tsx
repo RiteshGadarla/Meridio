@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Field, Input } from '../components/ui/form';
+import { GoogleButton } from '../features/auth/google-button';
 import { AuthLayout } from '../features/auth/auth-layout';
 import { useSignup } from '../features/auth/hooks';
 import { ApiError } from '../lib/api-client';
@@ -96,9 +97,10 @@ export function SignupPage() {
           Create account
         </Button>
       </form>
+      <GoogleButton action="signup" />
       <p className="mt-6 text-sm text-graphite-soft">
         Already have an account?{' '}
-        <Link to="/login" className="font-medium text-forest underline underline-offset-4">
+        <Link to="/login" className="font-medium text-brand underline underline-offset-4">
           Log in
         </Link>
       </p>

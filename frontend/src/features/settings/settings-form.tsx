@@ -1,6 +1,6 @@
 /**
  * FILE: frontend/src/features/settings/settings-form.tsx
- * PURPOSE: The "Inventory Defaults" form: one field, the default low-stock threshold.
+ * PURPOSE: The "Inventory Defaults" form: the default low-stock threshold and the display currency.
  * LAYER: Feature UI
  * USED BY: pages/settings-page.tsx
  * DEPENDS ON: @meridio/contracts (updateSettingsSchema), react-hook-form
@@ -9,28 +9,54 @@
  *        until the value is changed AND valid.
  */
 import { zodResolver } from '@hookform/resolvers/zod';
-import { updateSettingsSchema, type SettingsDto } from '@meridio/contracts';
+import {
+  CURRENCIES,
+  updateSettingsSchema,
+  type Currency,
+  type SettingsDto,
+} from '@meridio/contracts';
 import { useState, type KeyboardEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '../../components/ui/button';
-import { Field, Input } from '../../components/ui/form';
+import { Field, Input, Select } from '../../components/ui/form';
 import { useToast } from '../../components/ui/toast';
 import { ApiError } from '../../lib/api-client';
 import { useUpdateSettings } from './hooks';
 
 interface FormValues {
   defaultLowStockThreshold: string;
+  currency: Currency;
 }
+
+/** Dropdown labels: major currencies with their symbol, so the choice is recognisable. */
+const CURRENCY_LABELS: Record<Currency, string> = {
+  INR: 'INR – Indian Rupee (₹)',
+  USD: 'USD – US Dollar ($)',
+  EUR: 'EUR – Euro (€)',
+  GBP: 'GBP – British Pound (£)',
+  JPY: 'JPY – Japanese Yen (¥)',
+  AUD: 'AUD – Australian Dollar (A$)',
+  CAD: 'CAD – Canadian Dollar (C$)',
+  CHF: 'CHF – Swiss Franc (CHF)',
+  CNY: 'CNY – Chinese Yuan (CN¥)',
+  SGD: 'SGD – Singapore Dollar (S$)',
+  AED: 'AED – UAE Dirham (AED)',
+};
 
 // WHY a piped schema: convert the typed string to a number first, then validate with the SHARED
 // schema, so the rules and messages exist in one place only.
 const formSchema = z
   .custom<FormValues>()
-  .transform((v) => ({
-    defaultLowStockThreshold:
-      v.defaultLowStockThreshold.trim() === '' ? undefined : Number(v.defaultLowStockThreshold),
-  }))
+  .transform(
+    (v) =>
+      ({
+        // undefined (empty field) lets the shared schema report "Threshold must be a number".
+        defaultLowStockThreshold:
+          v.defaultLowStockThreshold.trim() === '' ? undefined : Number(v.defaultLowStockThreshold),
+        currency: v.currency,
+      }) as z.input<typeof updateSettingsSchema>,
+  )
   .pipe(updateSettingsSchema);
 
 const blockNonInteger = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -50,17 +76,24 @@ export function SettingsForm({ settings }: { settings: SettingsDto }) {
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema) as never,
     mode: 'onChange',
-    defaultValues: { defaultLowStockThreshold: String(settings.defaultLowStockThreshold) },
+    defaultValues: {
+      defaultLowStockThreshold: String(settings.defaultLowStockThreshold),
+      currency: settings.currency,
+    },
   });
 
   const onSubmit = handleSubmit(async (validated) => {
     setSaved(false);
-    const { defaultLowStockThreshold } = validated as unknown as {
+    const { defaultLowStockThreshold, currency } = validated as unknown as {
       defaultLowStockThreshold: number;
+      currency: Currency;
     };
     try {
-      const result = await update.mutateAsync({ defaultLowStockThreshold });
-      reset({ defaultLowStockThreshold: String(result.defaultLowStockThreshold) }); // pristine again
+      const result = await update.mutateAsync({ defaultLowStockThreshold, currency });
+      reset({
+        defaultLowStockThreshold: String(result.defaultLowStockThreshold),
+        currency: result.currency,
+      }); // pristine again
       setSaved(true);
       toast.success('Settings saved');
     } catch (error) {
@@ -100,6 +133,24 @@ export function SettingsForm({ settings }: { settings: SettingsDto }) {
           />
         )}
       </Field>
+
+      <div className="mt-5">
+        <Field
+          label="Currency"
+          error={errors.currency?.message}
+          hint="Used to display cost and selling prices everywhere. Prices are not converted: only the symbol and formatting change."
+        >
+          {(p) => (
+            <Select {...p} {...register('currency', { onChange: () => setSaved(false) })}>
+              {CURRENCIES.map((c) => (
+                <option key={c} value={c}>
+                  {CURRENCY_LABELS[c]}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+      </div>
 
       <div className="mt-5 flex items-center gap-4">
         <Button type="submit" disabled={!isDirty || !isValid} loading={update.isPending}>

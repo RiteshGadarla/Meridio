@@ -120,6 +120,7 @@ One line per file. Updated every stage.
 | `src/lib/format.ts` (+ test)           | Currency, number and date formatting (Intl)                                         |
 | `src/lib/api-client.ts` (+ test)       | Fetch wrapper, `ApiError`, 401 hook                                                 |
 | `src/components/logo.tsx`              | StockFlow mark and wordmark                                                         |
+| `src/components/theme-toggle.tsx`      | Light/dark theme switch button                                                      |
 | `src/components/ui/button.tsx`         | Button variants, sizes, loading                                                     |
 | `src/components/ui/form.tsx`           | Label, Input, Textarea, Select, FieldError, Field                                   |
 | `src/components/ui/badge.tsx`          | Badge and StatusBadge (marker + text)                                               |
@@ -135,6 +136,7 @@ One line per file. Updated every stage.
 | `src/layouts/page-header.tsx`          | Eyebrow, title, description, action                                                 |
 | `src/app/query-client.ts`              | TanStack Query defaults (no retry on 401/404)                                       |
 | `src/app/providers.tsx`                | Query and Toast providers                                                           |
+| `src/lib/theme.tsx`                    | Light/dark theme provider and `useTheme` hook (persisted, applies `dark` class)     |
 | `src/app/routes.tsx`                   | Route table (dev-only `/design`)                                                    |
 | `src/pages/*-page.tsx`                 | Page placeholders: dashboard, products, settings, login, signup, not-found          |
 | `src/pages/design-page.tsx`            | Dev-only living style guide                                                         |

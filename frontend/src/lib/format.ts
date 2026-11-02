@@ -6,10 +6,20 @@
  * NOTES: Money arrives from the API as a decimal STRING ("1234.50"). It is only converted for
  *        display; the original string is what gets sent back on save.
  */
+import { DEFAULT_CURRENCY } from '@meridio/contracts';
 
-/** Locale and currency for display. Change here to localise the whole app. */
+/** Locale for numbers and dates. */
 export const FORMAT_LOCALE = 'en-US';
-export const FORMAT_CURRENCY = 'USD';
+/** Currency shown until the organization's own choice (Settings) is known: Indian rupees. */
+export const FORMAT_CURRENCY = DEFAULT_CURRENCY;
+
+/**
+ * Locale used to format money in a given currency. Rupees use Indian digit grouping (1,23,456.00);
+ * everything else uses en-US grouping.
+ */
+function moneyLocale(currency: string): string {
+  return currency === 'INR' ? 'en-IN' : FORMAT_LOCALE;
+}
 
 /** Shown for an optional price that was never set. */
 export const NOT_SET = 'Not set';
@@ -17,13 +27,13 @@ export const NOT_SET = 'Not set';
 /**
  * Formats a money value.
  * @param value decimal string from the API, a number, or null/undefined/empty
- * @returns "$1,234.50", or "Not set" when there is no price
- * @example formatCurrency('1234.5') // "$1,234.50"
+ * @returns "₹1,234.50" (INR) or the organization's currency, or "Not set" when there is no price
+ * @example formatCurrency('1234.5') // "₹1,234.50"
  */
 export function formatCurrency(
   value: string | number | null | undefined,
   currency: string = FORMAT_CURRENCY,
-  locale: string = FORMAT_LOCALE,
+  locale: string = moneyLocale(currency),
 ): string {
   if (value === null || value === undefined || value === '') return NOT_SET;
   const n = typeof value === 'number' ? value : Number(value);

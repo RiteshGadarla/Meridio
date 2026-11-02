@@ -26,8 +26,15 @@
   --color-graphite-soft: #4b564f; /* secondary text (meets 4.5:1 on limestone and white) */
   --color-sandstone: #e8ddd1; /* Sandstone: borders, secondary surfaces */
   --color-paper: #fbfaf6; /* raised surface on limestone: inputs, tables, dialogs */
+  --color-sidebar: #173f35; /* sidebar surface: forest in light, near-black green in dark */
+  --color-sidebar-soft: #21503f; /* sidebar hover/active surface */
+  --color-on-forest: #f3f1e9; /* light text/borders ON the forest sidebar and buttons; same in both themes */
+  --color-brand: #173f35; /* forest used as TEXT/logo on the page background; lightens in dark mode */
 
   /* Stock status: strong colour (text, marker) + low-saturation tint (pill background) */
+  --color-status-healthy-ink: #2f6249; /* pill text, readable on its tint */
+  --color-status-low-ink: #8a5320;
+  --color-status-out-ink: #8f3a31;
   --color-status-healthy: #438365;
   --color-status-healthy-tint: #dce7d8;
   --color-status-low: #bd7737;
@@ -79,4 +86,35 @@
       opacity: 0.55;
     }
   }
+}
+
+/*
+ * ===== Dark theme =====
+ * WHY plain overrides (not a second @theme): Tailwind utilities read these same variables, so
+ * toggling the `dark` class on <html> re-colours the whole app with no per-component dark: classes.
+ * Semantics are preserved: limestone = page, paper = raised surface, graphite = text,
+ * sandstone = borders, forest = brand surfaces (sidebar, primary buttons).
+ * Copper and the three status colours keep their hue so meaning carries across themes.
+ */
+:root.dark {
+  color-scheme: dark;
+  --color-sidebar: #232e29; /* warm graphite, lighter than the page (#121815) and not the light theme green */
+  --color-sidebar-soft: #33423b;
+  --color-forest: #1b4d3f;
+  --color-forest-soft: #276350;
+  --color-limestone: #121815;
+  --color-paper: #1a221e;
+  --color-sage: #25392f;
+  --color-graphite: #eae8df;
+  --color-graphite-soft: #a6b1a9;
+  --color-sandstone: #313c35;
+  --color-copper-deep: #e29a79;
+  --color-brand: #8fcdb3;
+  --color-status-healthy-tint: #1f3a2e;
+  --color-status-low-tint: #3b2d1c;
+  --color-status-out-tint: #3e2420;
+  --color-status-healthy-ink: #8fd0b0;
+  --color-status-low-ink: #e9b57c;
+  --color-status-out-ink: #ee9d93;
+  --shadow-overlay: 0 8px 24px rgb(0 0 0 / 0.5);
 }

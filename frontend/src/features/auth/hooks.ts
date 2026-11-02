@@ -7,9 +7,16 @@
  * NOTES: The current user lives in the query cache under AUTH_KEY. `null` means signed out.
  *        SECURITY: logout clears the WHOLE cache so no private data survives for the next user.
  */
-import type { AuthUser, LoginInput, SignupInput } from '@meridio/contracts';
+import type { AuthUser, GoogleCompleteInput, LoginInput, SignupInput } from '@meridio/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchCurrentUser, login, logout, signup } from './api';
+import {
+  completeGoogleSignup,
+  fetchCurrentUser,
+  fetchGooglePending,
+  login,
+  logout,
+  signup,
+} from './api';
 
 export const AUTH_KEY = ['auth', 'me'] as const;
 
@@ -53,5 +60,22 @@ export function useLogout() {
       queryClient.clear(); // SECURITY: drop every cached private response
       queryClient.setQueryData(AUTH_KEY, null);
     },
+  });
+}
+
+export function useGooglePending() {
+  return useQuery({
+    queryKey: ['auth', 'google-pending'],
+    queryFn: fetchGooglePending,
+    retry: false,
+    staleTime: Infinity,
+  });
+}
+
+export function useCompleteGoogleSignup() {
+  const queryClient = useQueryClient();
+  return useMutation<AuthUser, Error, GoogleCompleteInput>({
+    mutationFn: completeGoogleSignup,
+    onSuccess: (user) => queryClient.setQueryData(AUTH_KEY, user),
   });
 }

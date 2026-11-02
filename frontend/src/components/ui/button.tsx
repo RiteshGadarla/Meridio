@@ -21,9 +21,9 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-forest text-limestone hover:bg-forest-soft active:bg-forest',
+  primary: 'bg-forest text-on-forest hover:bg-forest-soft active:bg-forest',
   secondary:
-    'border border-forest/40 bg-transparent text-forest hover:bg-sandstone/60 active:bg-sandstone',
+    'border border-brand/40 bg-transparent text-brand hover:bg-sandstone/60 active:bg-sandstone',
   ghost: 'bg-transparent text-graphite hover:bg-sandstone/60 active:bg-sandstone',
   danger: 'bg-status-out text-white hover:bg-[#a3433a] active:bg-status-out',
 };
