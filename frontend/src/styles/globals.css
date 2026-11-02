@@ -1,7 +1,55 @@
 /**
  * FILE: frontend/src/styles/globals.css
- * PURPOSE: Global stylesheet entry. Loads Tailwind CSS v4.
- * NOTES: TODO(stage-6): StockFlow design tokens (palette, fonts, radii) are defined in tokens.css
- *        and mapped into the Tailwind theme there. Nothing brand-specific lives here yet.
+ * PURPOSE: Global stylesheet entry: self-hosted fonts, Tailwind, design tokens, base element
+ *          styles and the few custom utilities Tailwind cannot express.
+ * LAYER: Design system
+ * USED BY: main.tsx
+ * NOTES:
+ *  - Fonts come from @fontsource packages (self-hosted, no external CDN).
+ *  - prefers-reduced-motion disables every animation in one place at the bottom.
  */
+@import '@fontsource/dm-sans/400.css';
+@import '@fontsource/dm-sans/500.css';
+@import '@fontsource/dm-sans/600.css';
+@import '@fontsource/dm-sans/700.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
 @import 'tailwindcss';
+@import './tokens.css';
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    color: var(--color-graphite);
+    background-color: var(--color-limestone);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100dvh;
+  }
+  /* One focus treatment everywhere: a copper ring that is visible on forest and on limestone. */
+  :focus-visible {
+    outline: 2px solid var(--color-copper);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background-color: var(--color-sage);
+  }
+}
+
+/* Data utility: SKUs, quantities, prices. Tabular numerals keep columns aligned. */
+@utility font-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

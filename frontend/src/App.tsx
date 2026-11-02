@@ -1,18 +1,20 @@
 /**
  * FILE: frontend/src/App.tsx
- * PURPOSE: Root component. Placeholder page until the design system and router arrive.
+ * PURPOSE: Root component: providers + browser router + route table.
  * LAYER: UI
  * USED BY: main.tsx
- * DEPENDS ON: @meridio/contracts (PRODUCT_NAME)
- * NOTES: TODO(stage-6): replaced by router + app shell.
+ * DEPENDS ON: app/providers.tsx, app/routes.tsx
  */
-import { PRODUCT_NAME } from '@meridio/contracts';
+import { BrowserRouter } from 'react-router-dom';
+import { Providers } from './app/providers';
+import { AppRoutes } from './app/routes';
 
-/** Renders the placeholder StockFlow page. */
 export function App() {
   return (
-    <main>
-      <h1 className="p-6 text-2xl font-semibold">{PRODUCT_NAME}</h1>
-    </main>
+    <Providers>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </Providers>
   );
 }

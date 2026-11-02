@@ -108,3 +108,34 @@ One line per file. Updated every stage.
 | `src/styles/globals.css` | Imports Tailwind CSS v4                                               |
 | `src/test/setup.ts`      | Vitest setup (jest-dom matchers, cleanup)                             |
 | `src/vite-env.d.ts`      | Vite client types                                                     |
+
+## frontend (Stage 6)
+
+| File                                   | Purpose                                                                             |
+| -------------------------------------- | ----------------------------------------------------------------------------------- |
+| `src/styles/tokens.css`                | Design tokens (palette, fonts, radii, shadow, motion) mapped into Tailwind `@theme` |
+| `src/styles/globals.css`               | Fonts, Tailwind, base styles, `.font-data`, reduced-motion rule                     |
+| `src/styles/tokens.test.ts`            | Guards the 9 palette hex values                                                     |
+| `src/lib/cn.ts`                        | Class name joiner                                                                   |
+| `src/lib/format.ts` (+ test)           | Currency, number and date formatting (Intl)                                         |
+| `src/lib/api-client.ts` (+ test)       | Fetch wrapper, `ApiError`, 401 hook                                                 |
+| `src/components/logo.tsx`              | StockFlow mark and wordmark                                                         |
+| `src/components/ui/button.tsx`         | Button variants, sizes, loading                                                     |
+| `src/components/ui/form.tsx`           | Label, Input, Textarea, Select, FieldError, Field                                   |
+| `src/components/ui/badge.tsx`          | Badge and StatusBadge (marker + text)                                               |
+| `src/components/ui/table.tsx`          | Ledger table primitives                                                             |
+| `src/components/ui/skeleton.tsx`       | Skeleton, TableSkeleton, MetricSkeleton                                             |
+| `src/components/ui/states.tsx`         | EmptyState, ErrorState                                                              |
+| `src/components/ui/overlay.tsx`        | Modal base: portal, focus trap, Escape, scroll lock                                 |
+| `src/components/ui/drawer.tsx`         | Right drawer (full screen on mobile)                                                |
+| `src/components/ui/confirm-dialog.tsx` | Confirmation dialog                                                                 |
+| `src/components/ui/toast.tsx`          | Toast provider with aria-live regions                                               |
+| `src/components/ui/ui.test.tsx`        | Primitive behaviour tests                                                           |
+| `src/layouts/app-shell.tsx` (+ test)   | Sidebar layout with mobile menu                                                     |
+| `src/layouts/page-header.tsx`          | Eyebrow, title, description, action                                                 |
+| `src/app/query-client.ts`              | TanStack Query defaults (no retry on 401/404)                                       |
+| `src/app/providers.tsx`                | Query and Toast providers                                                           |
+| `src/app/routes.tsx`                   | Route table (dev-only `/design`)                                                    |
+| `src/pages/*-page.tsx`                 | Page placeholders: dashboard, products, settings, login, signup, not-found          |
+| `src/pages/design-page.tsx`            | Dev-only living style guide                                                         |
+| `src/App.tsx`, `src/App.test.tsx`      | Root component and routing smoke tests                                              |

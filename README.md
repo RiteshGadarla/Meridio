@@ -13,7 +13,7 @@ Modular monolith (Express + Prisma) with a React SPA. Built stage by stage.
 | 3     | Authentication and tenant context | [x]  |
 | 4     | Product API                       | [x]  |
 | 5     | Dashboard and settings API        | [x]  |
-| 6     | Design system and app shell       | [ ]  |
+| 6     | Design system and app shell       | [x]  |
 | 7     | Temporary auth UI                 | [ ]  |
 | 8     | Dashboard UI                      | [ ]  |
 | 9     | Product management UI             | [ ]  |
@@ -224,3 +224,39 @@ Definitions, applied by one shared rule (`modules/inventory/stock-status.ts`):
 - A product threshold of `0` is a real override: that product is never "low", only "out" at 0.
 
 Changing the default threshold takes effect on the next request, because status is computed on read.
+
+## Design system ("Industrial Editorial")
+
+Tokens live once in `frontend/src/styles/tokens.css` and are exposed to Tailwind v4 through `@theme`
+(`bg-forest`, `text-graphite`, `border-sandstone` and so on).
+
+| Token            | Hex       | Use                                            |
+| ---------------- | --------- | ---------------------------------------------- |
+| `forest`         | `#173F35` | Primary brand, sidebar, primary buttons        |
+| `limestone`      | `#F3F1E9` | App background                                 |
+| `copper`         | `#C46B48` | Accent, focus ring, active nav bar (sparingly) |
+| `sage`           | `#DCE7D8` | Healthy tint, positive states                  |
+| `graphite`       | `#202923` | Text and headings                              |
+| `sandstone`      | `#E8DDD1` | Borders, secondary surfaces                    |
+| `status-healthy` | `#438365` | Healthy                                        |
+| `status-low`     | `#BD7737` | Low stock                                      |
+| `status-out`     | `#B74E43` | Out of stock                                   |
+
+Typography is self-hosted through `@fontsource`: DM Sans (400 to 700) for the interface and IBM Plex
+Mono (400, 500) for SKUs, quantities and prices through the `.font-data` utility (tabular numerals).
+There are no external font requests.
+
+Components in `frontend/src/components/ui`: Button, Input, Textarea, Select, Label, Field, FieldError,
+Badge, StatusBadge, Table primitives, Skeleton (+ TableSkeleton, MetricSkeleton), EmptyState,
+ErrorState, ConfirmDialog, Drawer, Toast. Layout: `AppShell` (forest sidebar, off-canvas on mobile)
+and `PageHeader`. Stock status always pairs a distinct marker shape with a text label, never colour
+alone. Motion is functional only and disabled under `prefers-reduced-motion`.
+
+The API client (`frontend/src/lib/api-client.ts`) calls only relative `/api/v1` URLs, unwraps the
+`{ data }` envelope and throws `ApiError` (status, code, fieldErrors).
+
+**Style guide:** run `npm run dev` and open <http://localhost:5173/design>. It shows every token,
+component and state. The route exists only in development builds.
+
+Routes so far: `/login`, `/signup` (placeholders), `/dashboard`, `/products`, `/settings` (page
+headers only), `/design` (dev), `/` redirects to `/dashboard`.

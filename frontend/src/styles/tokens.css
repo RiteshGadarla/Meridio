@@ -1,0 +1,82 @@
+/**
+ * FILE: frontend/src/styles/tokens.css
+ * PURPOSE: The ONE place StockFlow design tokens are defined (palette, fonts, radii, spacing,
+ *          shadow, motion). Tailwind v4 reads the @theme block and generates utilities from it
+ *          (bg-forest, text-graphite, border-sandstone, rounded-sm, font-sans, font-mono ...).
+ * LAYER: Design system
+ * USED BY: styles/globals.css (imported), every component through Tailwind utilities
+ * NOTES:
+ *  - Palette is the owner's brief ("Industrial Editorial"). Do not add colours without updating
+ *    docs and the tokens test (src/styles/tokens.test.ts).
+ *  - Status colours are used for BOTH the text/marker and (as low-saturation tints) the pill
+ *    background, identically on dashboard, product list and product form.
+ *  - Shadows are deliberately absent except --shadow-overlay (drawer and dialogs only).
+ *  - Spacing uses Tailwind's default 4px scale (p-1 = 4px ... p-6 = 24px ... p-8 = 32px); pick from
+ *    it rather than inventing values. Content gutters: 16px mobile, 24px tablet, 32px desktop.
+ */
+@theme {
+  /* ===== Palette ===== */
+  --color-forest: #173f35; /* Deep Forest: primary brand, sidebar, primary buttons */
+  --color-forest-soft: #21503f; /* slightly lighter forest: sidebar active/hover background */
+  --color-limestone: #f3f1e9; /* Warm Limestone: app background */
+  --color-copper: #c46b48; /* Muted Copper: accent, focus ring, active nav bar (sparingly) */
+  --color-copper-deep: #9f4f30; /* copper for TEXT on limestone/white (meets 4.5:1) */
+  --color-sage: #dce7d8; /* Sage: healthy tint, positive states */
+  --color-graphite: #202923; /* Graphite: text and headings */
+  --color-graphite-soft: #4b564f; /* secondary text (meets 4.5:1 on limestone and white) */
+  --color-sandstone: #e8ddd1; /* Sandstone: borders, secondary surfaces */
+  --color-paper: #fbfaf6; /* raised surface on limestone: inputs, tables, dialogs */
+
+  /* Stock status: strong colour (text, marker) + low-saturation tint (pill background) */
+  --color-status-healthy: #438365;
+  --color-status-healthy-tint: #dce7d8;
+  --color-status-low: #bd7737;
+  --color-status-low-tint: #f3e3cf;
+  --color-status-out: #b74e43;
+  --color-status-out-tint: #f1d9d5;
+
+  /* ===== Typography ===== */
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* ===== Radii: small and structured, never pill-everything ===== */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+
+  /* ===== Shadow: only the drawer and dialogs lift off the page ===== */
+  --shadow-overlay: 0 8px 24px rgb(32 41 35 / 0.14);
+
+  /* ===== Motion ===== */
+  --animate-drawer-in: drawer-in 180ms ease-out;
+  --animate-fade-in: fade-in 120ms ease-out;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+
+  @keyframes drawer-in {
+    from {
+      transform: translateX(24px);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes shimmer {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.55;
+    }
+  }
+}
