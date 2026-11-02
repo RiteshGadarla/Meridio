@@ -27,16 +27,27 @@ One line per file. Updated every stage.
 
 ## backend
 
-| File                  | Purpose                                                  |
-| --------------------- | -------------------------------------------------------- |
-| `package.json`        | Scripts: dev (tsx), build (tsc), start, test             |
-| `tsconfig.json`       | Typecheck config                                         |
-| `tsconfig.build.json` | Build config (emits `dist`)                              |
-| `.env.example`        | Backend env vars (copy to `backend/.env`, never commit)  |
-| `vitest.config.ts`    | Vitest config (node environment)                         |
-| `src/app.ts`          | `createApp()`: builds the Express app, no listen         |
-| `src/server.ts`       | Entry point: listens on `PORT` at 0.0.0.0                |
-| `src/app.test.ts`     | Supertest test for `GET /api/v1/ping` and workspace link |
+| File                                                               | Purpose                                                            |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `package.json`                                                     | Scripts: dev (tsx), build (tsc), start, test                       |
+| `tsconfig.json`                                                    | Typecheck config                                                   |
+| `tsconfig.build.json`                                              | Build config (emits `dist`)                                        |
+| `.env.example`                                                     | Backend env vars (copy to `backend/.env`, never commit)            |
+| `prisma.config.ts`                                                 | Prisma CLI config: schema path, migrations folder, direct Neon URL |
+| `prisma/schema.prisma`                                             | Database schema: Organization, User, Product                       |
+| `prisma/migrations/*_init/migration.sql`                           | Initial tables, indexes and foreign keys                           |
+| `prisma/migrations/*_constraints_and_search_indexes/migration.sql` | CHECK constraints and pg_trgm search indexes                       |
+| `prisma/seed.ts`                                                   | Idempotent dev seed (2 orgs, 2 users, 14 products)                 |
+| `src/lib/prisma.ts`                                                | Shared PrismaClient singleton and `createPrismaClient` factory     |
+| `test/db.ts`                                                       | Test DB helpers: safe URL guard, client factory, table reset       |
+| `test/global-setup.ts`                                             | Migrates the test database once before the suite                   |
+| `test/db/schema.test.ts`                                           | Constraints, SKU uniqueness, Decimal precision, cascades           |
+| `test/db/seed.test.ts`                                             | Seed idempotency and cross-org SKU reuse                           |
+| `test/db/safety.test.ts`                                           | Test helper refuses the dev database                               |
+| `vitest.config.ts`                                                 | Vitest config (node environment)                                   |
+| `src/app.ts`                                                       | `createApp()`: builds the Express app, no listen                   |
+| `src/server.ts`                                                    | Entry point: listens on `PORT` at 0.0.0.0                          |
+| `src/app.test.ts`                                                  | Supertest test for `GET /api/v1/ping` and workspace link           |
 
 ## frontend
 

@@ -19,3 +19,6 @@ coverage/
 .vite/
 playwright-report/
 test-results/
+
+# Generated Prisma client (rebuilt by `prisma generate`)
+backend/src/generated/

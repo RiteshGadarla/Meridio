@@ -4,3 +4,4 @@ coverage
 package-lock.json
 internalDocs
 CLAUDE.md
+backend/src/generated
