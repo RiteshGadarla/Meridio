@@ -26,6 +26,7 @@ export default tseslint.config(
       'backend/**/*.ts',
       'packages/**/*.ts',
       '*.js',
+      'scripts/**/*.mjs',
       '**/vite.config.ts',
       '**/vitest.config.ts',
     ],

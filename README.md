@@ -19,7 +19,7 @@ Modular monolith (Express + Prisma) with a React SPA. Built stage by stage.
 | 9     | Product management UI             | [x]  |
 | 10    | Settings UI                       | [x]  |
 | 11    | E2E, a11y, coverage               | [x]  |
-| 12    | Production deployment             | [ ]  |
+| 12    | Production deployment             | [x]  |
 | 13    | Docs and demo polish              | [ ]  |
 
 ## Local setup
@@ -30,7 +30,7 @@ Prerequisites: Node 20+.
 npm install
 cp backend/.env.example backend/.env     # then fill in secrets (see Database below)
 cp frontend/.env.example frontend/.env
-npm run db:deploy                        # apply migrations to your Neon database
+npm run db:deploy                        # optional: `npm run dev` also applies migrations
 npm run db:seed                          # optional: load demo data (DEV ONLY)
 npm run dev     # API on :4000, web on :5173 (Vite proxies /api to the API)
 ```
@@ -53,10 +53,19 @@ See [docs/CODEMAP.md](docs/CODEMAP.md) for a file-by-file map.
 PostgreSQL on [Neon](https://neon.tech), accessed with Prisma 7.10.1 (pinned exactly; the 8.x line is
 still release-candidate). Development uses Neon too: there is no local database.
 
-- `DATABASE_URL`: Neon **pooled** connection string. Used by the running API through the `pg` driver adapter.
-- `DIRECT_URL`: Neon **direct** connection string. Used only by the Prisma CLI for migrations.
+- `DATABASE_URL`: the **one** database URL (Neon). The pooled string is recommended. The running API uses
+  it through the `pg` driver adapter; for migrations Prisma derives the direct (non-pooled) address from
+  the same URL automatically (it drops `-pooler` from the host), so there is no second variable.
 - `TEST_DATABASE_URL`: a **separate** Neon database (for example `stockflow_test`) used by tests, which
   empty its tables. The test helper refuses to run if it points at the dev database.
+
+**How the tables get created.** The schema lives as SQL migration files in
+`backend/prisma/migrations/`. Prisma applies any that are missing with `prisma migrate deploy`, and
+that runs **automatically at startup**: `npm run dev` does it before starting the watcher, and
+`npm start` (used by Render) does it before launching the server. A fresh, empty database therefore
+gets its tables (`Organization`, `User`, `Product`) on the first start, and later deploys only apply
+new migrations. Already-applied migrations are skipped, so it is safe to run every time. The seed
+(demo data) is separate and never runs automatically.
 
 ```mermaid
 erDiagram
@@ -267,7 +276,7 @@ headers only), `/design` (dev), `/` redirects to `/dashboard`.
 npm install
 cp backend/.env.example backend/.env      # then fill in the Neon URLs and a JWT_SECRET
 cp frontend/.env.example frontend/.env
-npm run db:deploy && npm run db:seed      # migrations + demo data (dev database only)
+npm run db:seed                           # demo data (dev database only); tables are created by `npm run dev`
 npm run dev                               # web on :5173, API on :4000
 ```
 
@@ -421,3 +430,33 @@ Tests that touch the database use a separate Neon database (`TEST_DATABASE_URL`)
 against the development database. Browser-driven (Playwright) and automated accessibility (axe)
 checks are intentionally not part of this project; keyboard and focus behaviour is covered by the
 component tests.
+
+## Deployment
+
+StockFlow deploys as Neon (database) + Render (API) + Vercel (web). The browser only talks to Vercel,
+which rewrites `/api/*` to Render, so the session cookie is first-party.
+
+- Live app: `https://YOUR-APP.vercel.app` _(fill in after deploying)_
+- API health: `https://YOUR-RENDER-SERVICE.onrender.com/api/v1/health/ready`
+
+| Where  | Variable           | Value                                           |
+| ------ | ------------------ | ----------------------------------------------- |
+| Render | `NODE_ENV`         | `production`                                    |
+| Render | `DATABASE_URL`     | Neon connection string (pooled recommended)     |
+| Render | `JWT_SECRET`       | 32+ random characters                           |
+| Render | `JWT_EXPIRES_IN`   | `7d`                                            |
+| Render | `APP_ORIGIN`       | the exact Vercel URL                            |
+| Render | `TRUST_PROXY_HOPS` | `2`                                             |
+| Vercel | _(none)_           | the backend address lives only in `vercel.json` |
+
+Configuration files: [`vercel.json`](vercel.json), [`render.yaml`](render.yaml). Step-by-step
+click path, settings tables and troubleshooting: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+After deploying, verify with `npm run smoke:prod -- https://YOUR-APP.vercel.app`.
+
+**Known limitation: cold starts.** Render's free plan sleeps after inactivity, and the first request
+afterwards can take up to about a minute. The app shows a "Waking up the server" notice after 5
+seconds; open the API's `/api/v1/health/live` before a demo to wake it.
+
+`npm run build` also runs a bundle check that fails if the web build contains localhost URLs,
+database URLs, secrets or the backend's host.

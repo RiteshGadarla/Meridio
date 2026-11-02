@@ -55,10 +55,9 @@ export function createApp(options: CreateAppOptions = {}): Express {
   const logger = createLogger(env);
   const app = express();
 
-  // WHY trust proxy = 1: in production the request passes through the Vercel rewrite and then
-  // Render's proxy. Without this, req.ip (used by rate limiting) would be the proxy's address for
-  // every user, and `secure` cookies could not detect HTTPS.
-  app.set('trust proxy', 1);
+  // SECURITY: how many proxy hops to trust when deriving req.ip (see TRUST_PROXY_HOPS in env.ts).
+  // Rate limiting depends on it being the real visitor address.
+  app.set('trust proxy', env.TRUST_PROXY_HOPS);
   app.disable('x-powered-by');
 
   // ===== Global middleware (order matters) =====

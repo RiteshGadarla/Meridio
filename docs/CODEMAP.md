@@ -211,3 +211,23 @@ One line per file. Updated every stage.
 | `frontend/src/components/magic-rings/magic-rings.css` | Container and canvas layout for the effect                                      |
 | `frontend/public/favicon.svg`                         | Brand favicon                                                                   |
 | `frontend/index.html`                                 | Title, description, theme colour, Open Graph tags                               |
+
+### Stage 12 additions
+
+| File                                                        | Purpose                                                                                                 |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `vercel.json`                                               | Vercel build settings, `/api` rewrite to Render (before the SPA fallback), no rewrite caching           |
+| `render.yaml`                                               | Render Blueprint for the API (build, start that migrates first, health check, env vars)                 |
+| `docs/DEPLOYMENT.md`                                        | Click-path checklist, env table, troubleshooting                                                        |
+| `scripts/smoke-prod.mjs` (+ `.d.mts`)                       | Post-deploy smoke test (`npm run smoke:prod -- <url>`)                                                  |
+| `scripts/check-bundle.mjs` (+ `.d.mts`)                     | Fails the build if the web bundle leaks localhost/DB/secret/backend-host strings                        |
+| `backend/test/deploy/deploy.test.ts`                        | Tests for vercel.json, render.yaml, bundle scan, production mode, proxy-aware rate limits, smoke script |
+| `frontend/src/lib/slow-requests.ts`                         | Tracks requests pending over 5s                                                                         |
+| `frontend/src/components/server-waking-notice.tsx` (+ test) | "Waking up the server" banner                                                                           |
+| `backend/src/config/env.ts`                                 | Adds `TRUST_PROXY_HOPS`                                                                                 |
+
+### Single database URL (Stage 12)
+
+| File                                       | Purpose                                                               |
+| ------------------------------------------ | --------------------------------------------------------------------- |
+| `backend/src/lib/database-url.ts` (+ test) | `toDirectUrl` (drops `-pooler` for migrations) and `databaseIdentity` |

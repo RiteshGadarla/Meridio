@@ -1,11 +1,12 @@
 /**
  * FILE: frontend/src/app/providers.tsx
- * PURPOSE: Wraps the app in the QueryClient and Toast providers.
+ * PURPOSE: Wraps the app in the QueryClient and Toast providers; hosts the cold-start notice.
  * LAYER: App wiring
  * USED BY: App.tsx
  */
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
+import { ServerWakingNotice } from '../components/server-waking-notice';
 import { ToastProvider } from '../components/ui/toast';
 import { createQueryClient } from './query-client';
 
@@ -21,7 +22,10 @@ export function Providers({
   const client = injected ?? created;
   return (
     <QueryClientProvider client={client}>
-      <ToastProvider>{children}</ToastProvider>
+      <ToastProvider>
+        {children}
+        <ServerWakingNotice />
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

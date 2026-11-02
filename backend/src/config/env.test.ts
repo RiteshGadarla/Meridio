@@ -9,7 +9,6 @@ import { loadEnv } from './env.js';
 const valid = {
   NODE_ENV: 'production',
   DATABASE_URL: 'postgresql://pooled',
-  DIRECT_URL: 'postgresql://direct',
   JWT_SECRET: 'x'.repeat(40),
   APP_ORIGIN: 'https://stockflow.example.com/',
 };
@@ -21,6 +20,13 @@ describe('loadEnv', () => {
     expect(env.PORT).toBe(4000);
     expect(env.JWT_EXPIRES_IN).toBe('7d');
     expect(env.APP_ORIGIN).toBe('https://stockflow.example.com');
+  });
+
+  it('TRUST_PROXY_HOPS defaults to 1, accepts 2, and rejects out-of-range values', () => {
+    expect(loadEnv({ ...valid }).TRUST_PROXY_HOPS).toBe(1);
+    expect(loadEnv({ ...valid, TRUST_PROXY_HOPS: '2' }).TRUST_PROXY_HOPS).toBe(2);
+    expect(() => loadEnv({ ...valid, TRUST_PROXY_HOPS: '9' })).toThrow(/TRUST_PROXY_HOPS/);
+    expect(() => loadEnv({ ...valid, TRUST_PROXY_HOPS: 'many' })).toThrow(/TRUST_PROXY_HOPS/);
   });
 
   it('throws when JWT_SECRET is missing', () => {

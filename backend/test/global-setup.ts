@@ -14,9 +14,10 @@ export default function setup(): void {
     return;
   }
   const url = getTestDatabaseUrl();
-  // WHY DIRECT_URL override: prisma.config.ts migrates whatever DIRECT_URL points at.
+  // WHY DATABASE_URL override: prisma.config.ts migrates whatever DATABASE_URL points at (in its
+  // direct form), so point it at the TEST database for this one command.
   execFileSync('npx', ['prisma', 'migrate', 'deploy'], {
-    env: { ...process.env, DIRECT_URL: url },
+    env: { ...process.env, DATABASE_URL: url },
     stdio: 'ignore',
   });
 }

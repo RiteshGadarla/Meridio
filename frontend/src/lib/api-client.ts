@@ -11,6 +11,7 @@
  *  - SECURITY: credentials 'same-origin' sends the HttpOnly cookie; this code never sees the token.
  */
 import type { ErrorCode, FieldErrors } from '@meridio/contracts';
+import { trackRequest } from './slow-requests';
 
 const BASE_PATH = '/api/v1';
 
@@ -74,15 +75,8 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
-/**
- * Performs a request and returns the unwrapped envelope.
- * @throws ApiError on network failure or any non-2xx response
- * @example const { data, meta } = await request<ProductDto[]>('/products', { query: { page: 2 } });
- */
-export async function request<T>(
-  path: string,
-  options: RequestOptions = {},
-): Promise<ApiResult<T>> {
+/** The actual fetch + envelope handling. Wrapped by request() for slow-request tracking. */
+async function perform<T>(path: string, options: RequestOptions): Promise<ApiResult<T>> {
   let response: Response;
   try {
     response = await fetch(buildUrl(path, options.query), {
@@ -96,7 +90,6 @@ export async function request<T>(
     if (error instanceof DOMException && error.name === 'AbortError') throw error;
     throw new ApiError(0, 'NETWORK_ERROR', 'Cannot reach the server. Check your connection.');
   }
-
   const json = (await readJson(response)) as
     | {
         data?: T;
@@ -115,6 +108,24 @@ export async function request<T>(
     );
   }
   return { data: json?.data as T, meta: json?.meta };
+}
+
+/**
+ * Performs a request and returns the unwrapped envelope.
+ * @throws ApiError on network failure or any non-2xx response
+ * @example const { data, meta } = await request<ProductDto[]>('/products', { query: { page: 2 } });
+ */
+export async function request<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<ApiResult<T>> {
+  // After 5s the UI shows a "waking up the server" notice (free-tier cold start); cleared on settle.
+  const settled = trackRequest();
+  try {
+    return await perform<T>(path, options);
+  } finally {
+    settled();
+  }
 }
 
 /** Convenience wrappers that return only `data`. */

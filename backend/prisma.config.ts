@@ -4,19 +4,19 @@
  * LAYER: Config
  * USED BY: every `prisma ...` CLI command (migrate, generate, studio)
  * NOTES:
- *  - WHY DIRECT_URL here: Prisma 7 moved connection settings out of schema.prisma. The CLI uses the
- *    Neon DIRECT (non-pooled) connection because migrations need session-level features that the
- *    PgBouncer pooler does not support.
- *  - Runtime queries do NOT use this file; they use the pooled DATABASE_URL via the driver adapter
- *    in src/lib/prisma.ts.
+ *  - There is ONE database variable, DATABASE_URL. Prisma 7 moved connection settings out of
+ *    schema.prisma, and this file gives the CLI the DIRECT (non-pooled) form of that URL, derived by
+ *    removing "-pooler" from the Neon host, because migrations need session-level features that the
+ *    pooler does not support. The running API uses DATABASE_URL as is (pooled is fine and better).
  *  - dotenv/config loads backend/.env. Variables already set in the environment win, which is how
  *    the test setup points migrations at TEST_DATABASE_URL.
  */
 import 'dotenv/config';
 import { defineConfig, env } from 'prisma/config';
+import { toDirectUrl } from './src/lib/database-url.js';
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: { path: 'prisma/migrations' },
-  datasource: { url: env('DIRECT_URL') },
+  datasource: { url: toDirectUrl(env('DATABASE_URL')) },
 });

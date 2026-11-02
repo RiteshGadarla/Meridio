@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "prisma generate && tsx watch --env-file-if-exists=.env src/server.ts",
+    "dev": "prisma generate && prisma migrate deploy && tsx watch --env-file-if-exists=.env src/server.ts",
     "build": "prisma generate && tsc -p tsconfig.build.json",
-    "start": "node dist/server.js",
+    "start": "prisma migrate deploy && node dist/server.js",
     "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit",
     "test": "prisma generate && vitest run",
     "generate": "prisma generate",

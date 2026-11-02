@@ -1,0 +1,37 @@
+# FILE: render.yaml
+# PURPOSE: Render Blueprint for the StockFlow API (one web service). Secrets are NOT stored here:
+#          every `sync: false` variable is entered in the Render dashboard.
+# NOTES (why each non-default option exists; full steps are in docs/DEPLOYMENT.md):
+#  - Built from the repo ROOT because npm workspaces need the root lockfile, and
+#    packages/contracts must be built before the backend.
+#  - `npm ci --include=dev`: Render sets NODE_ENV=production during the build, which would make
+#    npm skip devDependencies, but the build needs typescript and prisma (both dev dependencies).
+#  - The start command (`npm run start -w backend`) applies pending database migrations
+#    (`prisma migrate deploy`) and then launches the API, so tables are created/updated on every
+#    deploy and cold start with no manual step. It also works on Render's free plan, which has no
+#    separate pre-deploy command on every plan. Migrations use the direct form of DATABASE_URL automatically.
+#  - healthCheckPath is the readiness endpoint, which also proves the database is reachable.
+#  - TRUST_PROXY_HOPS=2: requests pass through the Vercel rewrite AND Render's load balancer, so the
+#    real visitor IP (needed for rate limiting) is two hops back.
+services:
+  - type: web
+    name: stockflow-api
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: npm ci --include=dev && npm run build -w packages/contracts && npm run build -w backend
+    startCommand: npm run start -w backend
+    healthCheckPath: /api/v1/health/ready
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: TRUST_PROXY_HOPS
+        value: '2'
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_ORIGIN
+        sync: false

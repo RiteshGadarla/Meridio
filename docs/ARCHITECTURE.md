@@ -7,14 +7,15 @@ candidate, so the newest stable major (7.x) is used.
 
 **Why the setup looks the way it does (Prisma 7 + Neon):**
 
-| Concern                   | Decision                                                                                                    |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Runtime connection        | `@prisma/adapter-pg` over Neon's **pooled** URL (`DATABASE_URL`)                                            |
-| Migration connection      | `prisma.config.ts` uses the **direct** URL (`DIRECT_URL`); poolers can't run migrations reliably            |
-| Generated client          | `src/generated/prisma` (gitignored); rebuilt by `prisma generate`, which every backend script runs first    |
-| Raw SQL migration         | CHECK constraints and `pg_trgm` indexes, which the Prisma schema cannot express                             |
-| Trigram indexes in schema | Declared as `@@index(... type: Gin)` only so drift detection does not try to drop them                      |
-| Tests                     | A separate Neon database (`TEST_DATABASE_URL`), migrated by vitest `globalSetup`, tables truncated per test |
+| Concern                   | Decision                                                                                                                   |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Runtime connection        | `@prisma/adapter-pg` over `DATABASE_URL` (Neon pooled recommended)                                                         |
+| Migration connection      | `prisma.config.ts` derives the **direct** URL from `DATABASE_URL` (drops `-pooler`); poolers can't run migrations reliably |
+| Tables at startup         | `npm run dev` and `npm start` run `prisma migrate deploy` first, so an empty database gets its tables automatically        |
+| Generated client          | `src/generated/prisma` (gitignored); rebuilt by `prisma generate`, which every backend script runs first                   |
+| Raw SQL migration         | CHECK constraints and `pg_trgm` indexes, which the Prisma schema cannot express                                            |
+| Trigram indexes in schema | Declared as `@@index(... type: Gin)` only so drift detection does not try to drop them                                     |
+| Tests                     | A separate Neon database (`TEST_DATABASE_URL`), migrated by vitest `globalSetup`, tables truncated per test                |
 
 **Tenant model:** `Organization` is the tenant. `User` and `Product` carry `organizationId`; SKU is
 unique per `(organizationId, sku)`. One owner per organization is enforced in the signup service (a
@@ -60,3 +61,24 @@ sequenceDiagram
 backend re-exports them from `modules/inventory/stock-status.ts` and the product form imports them
 for its live "Preview". One implementation means the preview can never disagree with the server.
 The server value remains authoritative after a save.
+
+## Deployment topology (Stage 12)
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the steps. The design decisions:
+
+- **Same-origin API through a rewrite.** Vercel serves the SPA and rewrites `/api/*` to Render. The
+  cookie is therefore first-party: `SameSite=Lax` is enough, no CORS credentials dance, and no
+  backend URL in the React code (it lives only in `vercel.json`).
+- **Repo-root builds.** npm workspaces share one lockfile and `packages/contracts` must compile
+  first, so both Render and Vercel build from the root.
+- **One database variable.** `DATABASE_URL` is the only connection string. Runtime uses it as is
+  (pooled recommended). `prisma migrate deploy` needs the direct address, which `prisma.config.ts`
+  derives from the same URL. Migrations run at the start of `npm start`, so every deploy and cold start
+  applies pending migrations first (this also avoids needing Render's separate pre-deploy command, which is not available on every plan).
+- **Proxy awareness.** `TRUST_PROXY_HOPS` (2 in production) makes `req.ip` the real visitor, so rate
+  limits apply per visitor instead of per proxy.
+- **Cold-start tolerance.** The free Render tier sleeps; the client flags requests pending over 5
+  seconds and shows a non-blocking notice. `/health/ready` (database check) is the platform health
+  check; `/health/live` is the cheap wake-up ping.
+- **Build-time guard.** `scripts/check-bundle.mjs` fails `npm run build` if the web bundle contains
+  localhost URLs, DB URLs, secrets or the backend host.

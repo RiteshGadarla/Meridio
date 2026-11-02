@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "dev": "npm run build -w packages/contracts && concurrently -n backend,frontend -c blue,green \"npm run dev -w backend\" \"npm run dev -w frontend\"",
-    "build": "npm run build -w packages/contracts && npm run build -w backend && npm run build -w frontend",
+    "build": "npm run build -w packages/contracts && npm run build -w backend && npm run build -w frontend && node scripts/check-bundle.mjs",
     "lint": "eslint .",
     "typecheck": "npm run build -w packages/contracts && npm run typecheck -w packages/contracts -w backend -w frontend",
     "test": "npm run build -w packages/contracts && npm run test -w packages/contracts -w backend -w frontend",
@@ -25,7 +25,9 @@
     "db:studio": "npm run db:studio -w backend",
     "db:reset": "npm run db:reset -w backend",
     "test:e2e": "npm run build -w packages/contracts && npm run test:e2e -w backend",
-    "test:coverage": "npm run build -w packages/contracts && npm run test:coverage -w packages/contracts -w backend -w frontend"
+    "test:coverage": "npm run build -w packages/contracts && npm run test:coverage -w packages/contracts -w backend -w frontend",
+    "smoke:prod": "node scripts/smoke-prod.mjs",
+    "verify:bundle": "node scripts/check-bundle.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

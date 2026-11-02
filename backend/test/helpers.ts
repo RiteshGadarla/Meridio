@@ -15,9 +15,9 @@ export function makeTestEnv(overrides: Partial<Env> = {}): Env {
     NODE_ENV: 'test',
     PORT: 4000,
     DATABASE_URL: process.env.DATABASE_URL ?? 'postgresql://unused',
-    DIRECT_URL: process.env.DIRECT_URL ?? 'postgresql://unused',
     JWT_SECRET: 'test-secret-test-secret-test-secret-123456',
     JWT_EXPIRES_IN: '7d',
+    TRUST_PROXY_HOPS: 1,
     APP_ORIGIN: TEST_ORIGIN,
     ...overrides,
   };

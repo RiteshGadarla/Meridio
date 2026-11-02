@@ -3,10 +3,11 @@
 //
 // PRISMA VERSION: pinned to 7.10.1 (exact). Reason: the Prisma 8 line is still release-candidate,
 // and 7.x is the current stable major. Prisma 7 requires:
-//   - a driver adapter at runtime (@prisma/adapter-pg, see src/lib/prisma.ts), connected to the
-//     Neon POOLED url (DATABASE_URL);
-//   - connection settings for the CLI in prisma.config.ts (DIRECT_URL, the non-pooled Neon url),
-//     so there is no `url`/`directUrl` in the datasource block below;
+//   - a driver adapter at runtime (@prisma/adapter-pg, see src/lib/prisma.ts), connected to
+//     DATABASE_URL (the Neon pooled url works best);
+//   - connection settings for the CLI in prisma.config.ts, which derives the direct (non-pooled)
+//     form of the same DATABASE_URL for migrations, so there is no `url`/`directUrl` in the
+//     datasource block below;
 //   - the `prisma-client` generator with an explicit output folder (generated code is gitignored).
 //
 // CHECK constraints and pg_trgm search indexes cannot be expressed in this file. They live in the
