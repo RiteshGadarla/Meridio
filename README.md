@@ -35,6 +35,9 @@ npm run db:seed                          # optional: load demo data (DEV ONLY)
 npm run dev     # API on :4000, web on :5173 (Vite proxies /api to the API)
 ```
 
+Run the API alone with `npm run dev -w backend`. It validates its environment on startup and exits
+with a readable list of invalid variable names (never values) if anything is missing.
+
 Other scripts: `npm run build`, `lint`, `typecheck`, `test`, `format`.
 
 ## Layout
@@ -115,3 +118,15 @@ Never run the seed against production. These passwords are public.
 | Northwind Supply | `owner@northwind.test` | `NorthPass123` |
 
 `KEY-001` exists in both organizations to show that SKUs are unique per organization, not globally.
+
+## API foundation
+
+Versioned under `/api/v1`, with a uniform response envelope (`{ data }` / `{ error }`), documented
+error codes, and a request-id on every response. Helmet, CORS limited to `APP_ORIGIN`, a 100 KB body
+limit, an Origin check on state-changing requests, and `Cache-Control: private, no-store` are applied
+globally. Logs are structured (pino) with passwords, cookies and auth headers redacted.
+
+- `GET /api/v1/health/live`: process is up
+- `GET /api/v1/health/ready`: database is reachable (use this as the platform health check)
+
+See [docs/API.md](docs/API.md) for the envelope, error code table and endpoint reference.
