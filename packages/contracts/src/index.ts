@@ -3,7 +3,7 @@
  * PURPOSE: Public entry point of the shared contracts package (Zod schemas and DTO types).
  * LAYER: Shared package (consumed by both backend and frontend)
  * USED BY: backend, frontend
- * DEPENDS ON: ./common.ts, ./auth.ts, ./product.ts, ./settings.ts, ./dashboard.ts
+ * DEPENDS ON: ./common.ts, ./auth.ts, ./product.ts, ./stock-status.ts, ./settings.ts, ./dashboard.ts
  * NOTES: One source of truth for validation rules. Never duplicate a schema in an app.
  */
 
@@ -15,3 +15,4 @@ export * from './auth.js';
 export * from './product.js';
 export * from './settings.js';
 export * from './dashboard.js';
+export * from './stock-status.js';

@@ -53,3 +53,10 @@ sequenceDiagram
     C-->>B: 200 { data }
   end
 ```
+
+## Stock status is shared (Stage 9)
+
+`getEffectiveThreshold` and `getStockStatus` live in `@meridio/contracts` (`stock-status.ts`). The
+backend re-exports them from `modules/inventory/stock-status.ts` and the product form imports them
+for its live "Preview". One implementation means the preview can never disagree with the server.
+The server value remains authoritative after a save.

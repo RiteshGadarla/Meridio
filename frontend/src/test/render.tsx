@@ -34,8 +34,13 @@ export function mockSession(user: AuthUser | null) {
 
 /** Shows the current path so tests can assert where navigation ended up. */
 function LocationProbe() {
-  const { pathname } = useLocation();
-  return <output data-testid="path">{pathname}</output>;
+  const { pathname, search } = useLocation();
+  return (
+    <>
+      <output data-testid="path">{pathname}</output>
+      <output data-testid="search">{search}</output>
+    </>
+  );
 }
 
 /** Renders the real app routes at `path`. Returns the QueryClient for cache assertions. */

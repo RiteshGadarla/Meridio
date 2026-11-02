@@ -16,7 +16,7 @@ Modular monolith (Express + Prisma) with a React SPA. Built stage by stage.
 | 6     | Design system and app shell       | [x]  |
 | 7     | Temporary auth UI                 | [x]  |
 | 8     | Dashboard UI                      | [x]  |
-| 9     | Product management UI             | [ ]  |
+| 9     | Product management UI             | [x]  |
 | 10    | Settings UI                       | [ ]  |
 | 11    | E2E, a11y, coverage               | [ ]  |
 | 12    | Production deployment             | [ ]  |
@@ -308,3 +308,27 @@ Auth flow notes (the login and signup pages are deliberately minimal; final visu
 
 ![Dashboard screenshot](docs/screenshots/dashboard.png)
 <!-- TODO: add docs/screenshots/dashboard.png once captured against the seeded demo data. -->
+
+## Products
+
+`/products` is the catalogue: search, sort, server-side pagination, add/edit drawer and delete.
+
+- **List state lives in the URL**: `?search=&page=&sort=&order=`. Refresh, back/forward and shared
+  links all restore the same view. Searching (debounced 300 ms) resets to page 1. The table keeps the
+  previous page visible while the next one loads.
+- **Columns**: Product, SKU (mono), Quantity (mono), Stock status, Selling price ("Not set" when
+  empty), and Edit / Delete actions. Quantity, name and price headers sort.
+- **Drawer**: `?new=1` opens the add form and `?edit=ID` opens the edit form (right-hand drawer on
+  desktop, full screen on mobile). Closing with unsaved changes asks for confirmation.
+- **Form**: validated with the shared `createProductSchema`, so the browser and the API enforce
+  identical rules. The SKU is uppercased on blur. A live "Preview" shows the stock status as you type
+  using the same shared function as the server; the saved value from the API is authoritative.
+  A duplicate SKU appears under the SKU field.
+- **Edit sends only what changed**; clearing the threshold sends `null`, which falls back to the
+  organization default.
+- **Delete** asks for confirmation naming the product and SKU; deleting the last row of the last page
+  steps back one page.
+- Every create, update and delete refreshes the dashboard through `invalidateInventoryQueries`.
+
+![Products screenshot](docs/screenshots/products.png)
+<!-- TODO: add docs/screenshots/products.png once captured against the seeded demo data. -->

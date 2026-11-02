@@ -9,6 +9,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
+import { fakeProductsApi, makeProduct } from '../../test/fake-products-api';
 import { mockSession, renderApp, USER } from '../../test/render';
 import { server } from '../../test/server';
 import { invalidateInventoryQueries } from './hooks';
@@ -103,10 +104,11 @@ describe('DashboardPage', () => {
 
   it('navigates to /products?edit=ID from a row click and from the Edit link', async () => {
     serve(overview());
-    mockProducts();
+    fakeProductsApi([makeProduct(1, { id: 'p1', name: 'USB-C Hub' })]);
     renderApp('/dashboard');
     await userEvent.click(await screen.findByText('USB-C Hub'));
     await waitFor(() => expect(screen.getByTestId('path').textContent).toBe('/products'));
+    expect(screen.getByTestId('search').textContent).toBe('?edit=p1');
   });
 
   it('Edit link points at /products?edit=ID', async () => {
@@ -175,10 +177,6 @@ describe('DashboardPage', () => {
     expect(calls).toBe(2);
   });
 });
-
-function mockProducts() {
-  server.use(http.get('*/api/v1/products', () => HttpResponse.json({ data: [] })));
-}
 
 // Protects: later mutations refresh the dashboard by calling this one helper.
 describe('invalidateInventoryQueries', () => {

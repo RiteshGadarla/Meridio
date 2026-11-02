@@ -163,3 +163,21 @@ One line per file. Updated every stage.
 | `src/features/dashboard/dashboard.test.tsx`  | Dashboard states, table, navigation, invalidation tests |
 | `src/pages/dashboard-page.tsx`               | Dashboard page (now real)                               |
 | `src/components/ui/button.tsx`               | Adds `buttonStyles()` so links can look like buttons    |
+
+### Stage 9 additions
+
+| File                                                    | Purpose                                                                                       |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `packages/contracts/src/stock-status.ts`                | The single stock-status implementation (moved from the backend so the form preview shares it) |
+| `backend/src/modules/inventory/stock-status.ts`         | Now a re-export of the contracts implementation                                               |
+| `src/features/products/api.ts`                          | Typed `/products` calls                                                                       |
+| `src/features/products/hooks.ts`                        | `useProducts` (keepPreviousData), `useProduct`, create/update/delete mutations                |
+| `src/features/products/product-form-values.ts` (+ test) | Form strings to payload, PATCH diff                                                           |
+| `src/features/products/product-form.tsx`                | Create/edit form with live status preview                                                     |
+| `src/features/products/product-drawer.tsx`              | URL-driven drawer, dirty guard, 404 message                                                   |
+| `src/features/products/product-table.tsx`               | Sortable product table with actions                                                           |
+| `src/features/products/search-input.tsx`                | 300 ms debounced search                                                                       |
+| `src/features/products/pagination.tsx`                  | Server-side pagination controls                                                               |
+| `src/features/products/products.test.tsx`               | Products page tests                                                                           |
+| `src/test/fake-products-api.ts`                         | Stateful MSW fake of `/products`                                                              |
+| `src/pages/products-page.tsx`                           | Products page (now real)                                                                      |
