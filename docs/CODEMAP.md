@@ -151,3 +151,15 @@ One line per file. Updated every stage.
 | `src/features/auth/auth.test.tsx`           | Auth UI, guards, logout and expiry tests (MSW)                                  |
 | `src/test/server.ts`, `src/test/render.tsx` | MSW server and app render helpers                                               |
 | `src/test/setup.ts`                         | Now also starts MSW and resolves relative fetch URLs                            |
+
+### Stage 8 additions
+
+| File                                         | Purpose                                                 |
+| -------------------------------------------- | ------------------------------------------------------- |
+| `src/features/dashboard/api.ts`              | `GET /dashboard/overview` call                          |
+| `src/features/dashboard/hooks.ts`            | `useDashboardOverview`, `invalidateInventoryQueries`    |
+| `src/features/dashboard/kpi-cards.tsx`       | The three KPI cards                                     |
+| `src/features/dashboard/attention-table.tsx` | "Inventory attention" table                             |
+| `src/features/dashboard/dashboard.test.tsx`  | Dashboard states, table, navigation, invalidation tests |
+| `src/pages/dashboard-page.tsx`               | Dashboard page (now real)                               |
+| `src/components/ui/button.tsx`               | Adds `buttonStyles()` so links can look like buttons    |

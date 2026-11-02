@@ -15,7 +15,7 @@ Modular monolith (Express + Prisma) with a React SPA. Built stage by stage.
 | 5     | Dashboard and settings API        | [x]  |
 | 6     | Design system and app shell       | [x]  |
 | 7     | Temporary auth UI                 | [x]  |
-| 8     | Dashboard UI                      | [ ]  |
+| 8     | Dashboard UI                      | [x]  |
 | 9     | Product management UI             | [ ]  |
 | 10    | Settings UI                       | [ ]  |
 | 11    | E2E, a11y, coverage               | [ ]  |
@@ -289,3 +289,22 @@ Auth flow notes (the login and signup pages are deliberately minimal; final visu
 - If any request answers 401 while signed in, the cache is cleared and you land on `/login` with a
   "Session expired" notice.
 - The browser never sees the token: it lives in an HttpOnly cookie.
+
+## Dashboard
+
+`/dashboard` is the landing page, backed by `GET /api/v1/dashboard/overview`.
+
+- Exactly three KPI cards in the mono data font: **Total Products**, **Total Units**
+  and **Low Stock Products** (amber with a copper rule only when above 0), each with a one-line caption. Restrained cards: hairline border, no shadow or gradient, no charts.
+- **Inventory attention** table: product, SKU, quantity, threshold (a small "default" tag when the
+  product inherits the organization default), and status. A row click or the Edit link opens
+  `/products?edit={id}`. "Add Product" links to `/products?new=1`.
+- Low stock means quantity at or below the threshold, so it includes out-of-stock items; the list is
+  labelled "Needs attention".
+- States: skeleton while loading, an error panel with retry, "No products yet" for an empty
+  catalogue, and "All stocked up" when nothing needs attention.
+- Any mutation that changes products or the default threshold must call
+  `invalidateInventoryQueries(queryClient)` so the dashboard refreshes.
+
+![Dashboard screenshot](docs/screenshots/dashboard.png)
+<!-- TODO: add docs/screenshots/dashboard.png once captured against the seeded demo data. -->

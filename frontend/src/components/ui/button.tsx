@@ -34,6 +34,19 @@ const SIZES: Record<ButtonSize, string> = {
 };
 
 /**
+ * Class string for a button look, so a router <Link> can match a <Button> exactly.
+ * @example <Link to="/products?new=1" className={buttonStyles('primary')}>Add Product</Link>
+ */
+export function buttonStyles(variant: ButtonVariant = 'primary', size: ButtonSize = 'md'): string {
+  return cn(
+    'inline-flex items-center justify-center gap-2 rounded-sm font-medium transition-colors',
+    'disabled:cursor-not-allowed disabled:opacity-50',
+    VARIANTS[variant],
+    SIZES[size],
+  );
+}
+
+/**
  * @example <Button variant="primary" loading={isPending}>Save product</Button>
  */
 export function Button({
@@ -51,13 +64,7 @@ export function Button({
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-sm font-medium transition-colors',
-        'disabled:cursor-not-allowed disabled:opacity-50',
-        VARIANTS[variant],
-        SIZES[size],
-        className,
-      )}
+      className={cn(buttonStyles(variant, size), className)}
       {...rest}
     >
       {loading && <Loader2 aria-hidden="true" className="size-4 animate-spin" />}
