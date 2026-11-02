@@ -181,3 +181,13 @@ One line per file. Updated every stage.
 | `src/features/products/products.test.tsx`               | Products page tests                                                                           |
 | `src/test/fake-products-api.ts`                         | Stateful MSW fake of `/products`                                                              |
 | `src/pages/products-page.tsx`                           | Products page (now real)                                                                      |
+
+### Stage 10 additions
+
+| File                                      | Purpose                                                                                 |
+| ----------------------------------------- | --------------------------------------------------------------------------------------- |
+| `src/features/settings/api.ts`            | `GET`/`PATCH /settings` calls                                                           |
+| `src/features/settings/hooks.ts`          | `useSettings`, `useUpdateSettings` (patches cached user, invalidates inventory queries) |
+| `src/features/settings/settings-form.tsx` | "Inventory Defaults" form                                                               |
+| `src/features/settings/settings.test.tsx` | Settings page tests                                                                     |
+| `src/pages/settings-page.tsx`             | Settings page (now real)                                                                |

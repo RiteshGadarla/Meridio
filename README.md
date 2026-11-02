@@ -17,7 +17,7 @@ Modular monolith (Express + Prisma) with a React SPA. Built stage by stage.
 | 7     | Temporary auth UI                 | [x]  |
 | 8     | Dashboard UI                      | [x]  |
 | 9     | Product management UI             | [x]  |
-| 10    | Settings UI                       | [ ]  |
+| 10    | Settings UI                       | [x]  |
 | 11    | E2E, a11y, coverage               | [ ]  |
 | 12    | Production deployment             | [ ]  |
 | 13    | Docs and demo polish              | [ ]  |
@@ -332,3 +332,28 @@ Auth flow notes (the login and signup pages are deliberately minimal; final visu
 
 ![Products screenshot](docs/screenshots/products.png)
 <!-- TODO: add docs/screenshots/products.png once captured against the seeded demo data. -->
+
+## Settings
+
+`/settings` has one section, **Inventory Defaults**, with one field: the **default low-stock
+threshold** (a whole number from 0 to 100,000, validated by the same shared schema as the API).
+Save stays disabled until the value is changed and valid. A successful save shows a toast and an
+inline "Saved", and refreshes the dashboard and product data immediately.
+
+How the threshold works: a product is low stock when its quantity is **at or below** its threshold,
+and out of stock at quantity 0. A product's own threshold overrides the organization default; leaving
+it empty means "use the default". An explicit `0` is a real override.
+
+Worked example, with the default set to **10**:
+
+| Product  | Own threshold | Quantity | Effective threshold | Status       |
+| -------- | ------------- | -------- | ------------------- | ------------ |
+| Keyboard | (empty)       | 8        | 10 (default)        | Low stock    |
+| Mouse    | (empty)       | 11       | 10 (default)        | Healthy      |
+| Cable    | 3             | 8        | 3 (own)             | Healthy      |
+| Hub      | 20            | 15       | 20 (own)            | Low stock    |
+| Stand    | 0             | 1        | 0 (own)             | Healthy      |
+| Lamp     | (any)         | 0        | n/a                 | Out of stock |
+
+Change the default to **5** and Keyboard becomes Healthy; Mouse, Cable, Hub, Stand and Lamp are
+unchanged because Mouse stays above 5 and the others have their own thresholds or no stock.
