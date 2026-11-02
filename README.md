@@ -8,9 +8,9 @@ Modular monolith (Express + Prisma) with a React SPA. Built stage by stage.
 | Stage | Scope                             | Done |
 | ----- | --------------------------------- | :--: |
 | 0     | Monorepo, tooling                 | [x]  |
-| 1     | Database foundation               | [ ]  |
-| 2     | Express API foundation            | [ ]  |
-| 3     | Authentication and tenant context | [ ]  |
+| 1     | Database foundation               | [x]  |
+| 2     | Express API foundation            | [x]  |
+| 3     | Authentication and tenant context | [x]  |
 | 4     | Product API                       | [ ]  |
 | 5     | Dashboard and settings API        | [ ]  |
 | 6     | Design system and app shell       | [ ]  |
@@ -130,3 +130,52 @@ globally. Logs are structured (pino) with passwords, cookies and auth headers re
 - `GET /api/v1/health/ready`: database is reachable (use this as the platform health check)
 
 See [docs/API.md](docs/API.md) for the envelope, error code table and endpoint reference.
+
+## Authentication and tenant context
+
+Each signup creates one organization (the tenant) and its single owner in one database transaction.
+The session is a JWT in an `HttpOnly` cookie, so JavaScript can never read it.
+
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant A as API
+  participant D as Postgres
+  B->>A: POST /auth/login {email, password}
+  A->>D: find user by email
+  A->>A: bcrypt compare (dummy hash if unknown email)
+  A-->>B: 200 + Set-Cookie sf_session (HttpOnly, Lax)
+  B->>A: GET /auth/me (cookie sent automatically)
+  A->>A: verify JWT signature and expiry
+  A->>D: load user (organizationId comes from this row)
+  A-->>B: 200 {user, organization}
+```
+
+Cookie `sf_session`: `HttpOnly`, `SameSite=Lax`, `Path=/`, `Secure` in production, `Max-Age` equal to
+the JWT lifetime (`JWT_EXPIRES_IN`, default `7d`). Lax is enough because the browser only talks to
+the frontend origin, and the host rewrites `/api` to the API, so the cookie is first-party.
+
+Security measures:
+
+- bcrypt (cost 12) password hashes; passwords are 8 to 72 characters with a letter and a number
+- Login failure is one generic message ("Invalid email or password"), and a dummy hash is compared
+  for unknown emails to keep timing similar (no user enumeration)
+- The user is re-loaded from the database on every authenticated request, so a deleted user loses
+  access immediately
+- `organizationId` is taken from the database row of the verified user, never from the request
+- JWT algorithm pinned to HS256; secret must be 32+ characters
+- Rate limits: login 10 per 15 minutes per IP and email, signup 5 per hour per IP (in memory, fine for
+  one API instance)
+- Origin check on state-changing requests (see API foundation)
+
+Examples (full reference in [docs/API.md](docs/API.md)):
+
+```bash
+curl -i -X POST http://localhost:4000/api/v1/auth/signup \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"me@acme.test","password":"Passw0rdOK","organizationName":"Acme"}'
+
+curl -b cookies.txt -c cookies.txt -X POST http://localhost:4000/api/v1/auth/login \
+  -H 'Content-Type: application/json' -d '{"email":"me@acme.test","password":"Passw0rdOK"}'
+curl -b cookies.txt http://localhost:4000/api/v1/auth/me
+```

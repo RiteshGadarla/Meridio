@@ -3,7 +3,7 @@
  * PURPOSE: Builds the Express application with the full middleware stack. Does NOT call listen().
  * LAYER: Composition root (Route -> Middleware -> Validation -> Controller -> Service -> Prisma)
  * USED BY: server.ts, tests (Supertest)
- * DEPENDS ON: express, helmet, cors, cookie-parser, pino-http, all middleware, health module
+ * DEPENDS ON: express, helmet, cors, cookie-parser, pino-http, all middleware, health + auth modules
  * NOTES: WHY no listen(): tests import createApp() and exercise it without opening a port.
  */
 import cookieParser from 'cookie-parser';
@@ -12,7 +12,16 @@ import express, { Router, type Express } from 'express';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import { loadEnv, type Env } from './config/env.js';
+import { createJwtService } from './lib/jwt.js';
 import { createLogger } from './lib/logger.js';
+import { prisma as defaultPrisma } from './lib/prisma.js';
+import type { PrismaClient } from './generated/prisma/client.js';
+import {
+  DEFAULT_RATE_LIMITS,
+  createRateLimiters,
+  type RateLimitConfig,
+} from './middleware/rate-limit.js';
+import { createAuthRouter } from './modules/auth/auth.routes.js';
 import { cacheControl } from './middleware/cache-control.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { notFound } from './middleware/not-found.js';
@@ -26,6 +35,10 @@ export interface CreateAppOptions {
   env?: Env;
   /** Database probe used by /health/ready. Defaults to SELECT 1 through Prisma. */
   checkDatabase?: DatabaseCheck;
+  /** Database client. Defaults to the shared one; tests inject a client bound to the test DB. */
+  prisma?: PrismaClient;
+  /** Auth rate limits. Defaults: on, except when NODE_ENV=test (so unrelated tests never trip them). */
+  rateLimits?: RateLimitConfig;
   /** TEST SEAM: lets a test mount extra routes inside the real middleware stack. */
   mountRoutes?: (router: Router) => void;
 }
@@ -66,7 +79,20 @@ export function createApp(options: CreateAppOptions = {}): Express {
   api.use(cacheControl);
 
   api.use('/health', createHealthRouter(options.checkDatabase));
-  // TODO(stage-3): auth routes. TODO(stage-4): products. TODO(stage-5): dashboard, settings.
+  const jwt = createJwtService({ secret: env.JWT_SECRET, expiresIn: env.JWT_EXPIRES_IN });
+  const limiters = createRateLimiters(
+    options.rateLimits ?? { ...DEFAULT_RATE_LIMITS, enabled: env.NODE_ENV !== 'test' },
+  );
+  api.use(
+    '/auth',
+    createAuthRouter({
+      prisma: options.prisma ?? defaultPrisma,
+      jwt,
+      isProduction: env.NODE_ENV === 'production',
+      limiters,
+    }),
+  );
+  // TODO(stage-4): products. TODO(stage-5): dashboard, settings.
   options.mountRoutes?.(api);
 
   app.use('/api/v1', api);

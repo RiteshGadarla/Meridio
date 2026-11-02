@@ -76,3 +76,49 @@ Always `200` while the process is running.
 ```
 
 Use `/health/ready` as the hosting platform health check path.
+
+## Auth
+
+Session is the `sf_session` cookie (`HttpOnly`, `SameSite=Lax`, `Secure` in production). All bodies
+are JSON. `AuthUser` is `{ id, email, organization: { id, name, defaultLowStockThreshold } }`.
+
+### `POST /auth/signup`
+
+Creates an organization and its owner in one transaction, then signs the user in. Rate limit: 5 per
+hour per IP.
+
+```json
+{ "email": "me@acme.test", "password": "Passw0rdOK", "organizationName": "Acme" }
+```
+
+`201`:
+
+```json
+{
+  "data": {
+    "id": "cm...",
+    "email": "me@acme.test",
+    "organization": { "id": "cm...", "name": "Acme", "defaultLowStockThreshold": 5 }
+  }
+}
+```
+
+Errors: `400 VALIDATION_ERROR` (password 8 to 72 characters with a letter and a number, valid email,
+organization name 2 to 80 characters), `409 EMAIL_TAKEN` (case-insensitive), `429 RATE_LIMITED`.
+
+### `POST /auth/login`
+
+Body `{ "email", "password" }`. `200` returns `AuthUser` and sets the cookie. Rate limit: 10 per 15
+minutes per IP and email.
+
+Errors: `401 UNAUTHENTICATED` with the same message `Invalid email or password` whether the email
+is unknown or the password is wrong; `429 RATE_LIMITED`.
+
+### `POST /auth/logout`
+
+Clears the cookie. Always `200 { "data": { "loggedOut": true } }`.
+
+### `GET /auth/me`
+
+Requires the cookie. `200` returns `AuthUser` with fresh organization data. `401 UNAUTHENTICATED`
+when the cookie is missing, tampered, expired, or its user no longer exists.

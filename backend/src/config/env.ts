@@ -18,7 +18,11 @@ const envSchema = z.object({
   DIRECT_URL: z.string().min(1, 'is required (Neon direct connection string)'),
   // SECURITY: 32 characters minimum so the HMAC signing key cannot be brute-forced cheaply.
   JWT_SECRET: z.string().min(32, 'must be at least 32 characters'),
-  JWT_EXPIRES_IN: z.string().min(1).default('7d'),
+  // WHY regex: the same value drives the JWT lifetime AND the cookie maxAge (see lib/jwt.ts).
+  JWT_EXPIRES_IN: z
+    .string()
+    .regex(/^\d+[smhd]?$/, 'must look like 7d, 12h, 30m or a number of seconds')
+    .default('7d'),
   // WHY normalise to origin: browsers send "Origin: https://host" with no trailing slash or path,
   // so comparing against a value like "https://host/" would wrongly reject every request.
   APP_ORIGIN: z

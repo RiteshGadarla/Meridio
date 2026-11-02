@@ -1,0 +1,80 @@
+/**
+ * FILE: packages/contracts/src/auth.ts
+ * PURPOSE: Zod schemas and DTO types for signup, login and the authenticated user.
+ * LAYER: Shared contract
+ * USED BY: backend auth module (validation), frontend auth forms (Stage 7)
+ * DEPENDS ON: zod
+ * NOTES: SECURITY: the password rules live here once. The API enforces them; the UI reuses them
+ *        for instant feedback, so the two can never disagree.
+ */
+import { z } from 'zod';
+
+// ===== Field rules =====
+
+/** Trimmed, lowercased, max 254 chars (the practical limit of an email address). */
+const emailField = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(254, 'Email must be at most 254 characters')
+  .pipe(z.email('Enter a valid email address'));
+
+/**
+ * 8 to 72 characters with at least one letter and one number.
+ * WHY 72: bcrypt silently ignores bytes beyond 72, so a longer password would be weaker than the
+ * user believes. The byte check also catches multi-byte characters (emoji) that fit in 72 chars
+ * but not in 72 bytes.
+ */
+const passwordField = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(72, 'Password must be at most 72 characters')
+  .refine((v) => new TextEncoder().encode(v).length <= 72, 'Password is too long')
+  .regex(/[A-Za-z]/, 'Password must contain a letter')
+  .regex(/[0-9]/, 'Password must contain a number');
+
+// ===== Schemas =====
+
+/** Request body of POST /auth/signup (what the API validates). */
+export const signupSchema = z.object({
+  email: emailField,
+  password: passwordField,
+  organizationName: z
+    .string()
+    .trim()
+    .min(2, 'Organization name must be at least 2 characters')
+    .max(80, 'Organization name must be at most 80 characters'),
+});
+
+/**
+ * Signup FORM schema: the API schema plus a confirmPassword match check.
+ * WHY separate: confirmation is a typing aid for the browser; the API never needs it.
+ */
+export const signupFormSchema = signupSchema
+  .extend({ confirmPassword: z.string() })
+  .refine((v) => v.password === v.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Passwords do not match',
+  });
+
+/**
+ * Request body of POST /auth/login.
+ * EDGE CASE: only "non-empty" is checked for the password, so an old weak password can still log in.
+ */
+export const loginSchema = z.object({
+  email: emailField,
+  password: z.string().min(1, 'Password is required'),
+});
+
+// ===== Types =====
+
+export type SignupInput = z.infer<typeof signupSchema>;
+export type SignupFormInput = z.infer<typeof signupFormSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
+
+/** The signed-in user and their organization, as returned by signup, login and /auth/me. */
+export interface AuthUser {
+  id: string;
+  email: string;
+  organization: { id: string; name: string; defaultLowStockThreshold: number };
+}
