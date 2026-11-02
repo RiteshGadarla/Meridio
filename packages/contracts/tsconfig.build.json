@@ -1,0 +1,7 @@
+{
+  // Build config: compiles to dist/ with type declarations, excluding tests.
+  // WHY a separate file: tests must not ship in dist, but still need typechecking.
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": false, "outDir": "dist", "rootDir": "src", "declaration": true },
+  "exclude": ["src/**/*.test.ts"]
+}

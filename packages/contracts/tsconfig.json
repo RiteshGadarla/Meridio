@@ -1,0 +1,6 @@
+{
+  // Typecheck config: includes tests, emits nothing.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "module": "NodeNext", "moduleResolution": "NodeNext", "noEmit": true },
+  "include": ["src"]
+}

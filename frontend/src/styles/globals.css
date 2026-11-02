@@ -1,0 +1,7 @@
+/**
+ * FILE: frontend/src/styles/globals.css
+ * PURPOSE: Global stylesheet entry. Loads Tailwind CSS v4.
+ * NOTES: TODO(stage-6): StockFlow design tokens (palette, fonts, radii) are defined in tokens.css
+ *        and mapped into the Tailwind theme there. Nothing brand-specific lives here yet.
+ */
+@import 'tailwindcss';

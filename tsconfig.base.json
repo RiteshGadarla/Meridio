@@ -1,0 +1,16 @@
+{
+  // Shared strict compiler options. Each package extends this and sets its own module/emit options.
+  "compilerOptions": {
+    "target": "ES2022",
+    "strict": true,
+    // WHY: catches `arr[i]` being possibly undefined, a common runtime bug source.
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true
+  }
+}

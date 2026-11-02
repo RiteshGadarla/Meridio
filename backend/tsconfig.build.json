@@ -1,0 +1,7 @@
+{
+  // Build config: compiles src/ only, to dist/, for `node dist/server.js`.
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": false, "outDir": "dist", "rootDir": "src" },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}
