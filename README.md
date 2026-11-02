@@ -14,7 +14,7 @@ Modular monolith (Express + Prisma) with a React SPA. Built stage by stage.
 | 4     | Product API                       | [x]  |
 | 5     | Dashboard and settings API        | [x]  |
 | 6     | Design system and app shell       | [x]  |
-| 7     | Temporary auth UI                 | [ ]  |
+| 7     | Temporary auth UI                 | [x]  |
 | 8     | Dashboard UI                      | [ ]  |
 | 9     | Product management UI             | [ ]  |
 | 10    | Settings UI                       | [ ]  |
@@ -260,3 +260,32 @@ component and state. The route exists only in development builds.
 
 Routes so far: `/login`, `/signup` (placeholders), `/dashboard`, `/products`, `/settings` (page
 headers only), `/design` (dev), `/` redirects to `/dashboard`.
+
+## Run the app and log in
+
+```bash
+npm install
+cp backend/.env.example backend/.env      # then fill in the Neon URLs and a JWT_SECRET
+cp frontend/.env.example frontend/.env
+npm run db:deploy && npm run db:seed      # migrations + demo data (dev database only)
+npm run dev                               # web on :5173, API on :4000
+```
+
+Open <http://localhost:5173>. Log in with a seeded demo user (DEV ONLY, see the Database section):
+
+| Organization     | Email                  | Password       |
+| ---------------- | ---------------------- | -------------- |
+| Demo Store       | `demo@demostore.test`  | `DemoPass123`  |
+| Northwind Supply | `owner@northwind.test` | `NorthPass123` |
+
+Or create your own organization at `/signup`.
+
+Auth flow notes (the login and signup pages are deliberately minimal; final visuals come later):
+
+- A signed-out visit to any app page redirects to `/login` and returns you to that page after login.
+- A signed-in visit to `/login` or `/signup` goes to `/dashboard`.
+- On refresh, a loading screen shows while the session is checked, so there is no flash of the login page.
+- Logout calls the API, then clears the entire client cache, then returns to `/login`.
+- If any request answers 401 while signed in, the cache is cleared and you land on `/login` with a
+  "Session expired" notice.
+- The browser never sees the token: it lives in an HttpOnly cookie.

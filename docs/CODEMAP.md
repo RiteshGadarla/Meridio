@@ -139,3 +139,15 @@ One line per file. Updated every stage.
 | `src/pages/*-page.tsx`                 | Page placeholders: dashboard, products, settings, login, signup, not-found          |
 | `src/pages/design-page.tsx`            | Dev-only living style guide                                                         |
 | `src/App.tsx`, `src/App.test.tsx`      | Root component and routing smoke tests                                              |
+
+### Stage 7 additions
+
+| File                                        | Purpose                                                                         |
+| ------------------------------------------- | ------------------------------------------------------------------------------- |
+| `src/features/auth/api.ts`                  | signup, login, logout, `fetchCurrentUser` (401 becomes `null`)                  |
+| `src/features/auth/hooks.ts`                | `useCurrentUser`, `useLogin`, `useSignup`, `useLogout` (clears the cache)       |
+| `src/features/auth/guards.tsx`              | `RequireAuth`, `RedirectIfAuthed`, `AuthedShell`, `SessionWatcher` (global 401) |
+| `src/features/auth/auth-layout.tsx`         | Minimal frame for login and signup                                              |
+| `src/features/auth/auth.test.tsx`           | Auth UI, guards, logout and expiry tests (MSW)                                  |
+| `src/test/server.ts`, `src/test/render.tsx` | MSW server and app render helpers                                               |
+| `src/test/setup.ts`                         | Now also starts MSW and resolves relative fetch URLs                            |

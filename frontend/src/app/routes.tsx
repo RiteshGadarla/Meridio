@@ -4,13 +4,18 @@
  * LAYER: App wiring
  * USED BY: App.tsx, tests (inside a MemoryRouter)
  * NOTES:
- *  - TODO(stage-7): wrap the shell routes in an auth guard and pass the session user to AppShell.
+ *  - Shell routes sit behind RequireAuth; /login and /signup behind RedirectIfAuthed (Stage 7).
  *  - /design is the living style guide. It is only referenced when import.meta.env.DEV is true;
  *    Vite replaces that with `false` in production builds, so the page is dropped from the bundle.
  */
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { AppShell } from '../layouts/app-shell';
+import {
+  AuthedShell,
+  RedirectIfAuthed,
+  RequireAuth,
+  SessionWatcher,
+} from '../features/auth/guards';
 import { DashboardPage } from '../pages/dashboard-page';
 import { LoginPage } from '../pages/login-page';
 import { NotFoundPage } from '../pages/not-found-page';
@@ -22,26 +27,33 @@ const DesignPage = import.meta.env.DEV ? lazy(() => import('../pages/design-page
 
 export function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-      <Route element={<AppShell />}>
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/products" element={<ProductsPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-      </Route>
-      {DesignPage && (
-        <Route
-          path="/design"
-          element={
-            <Suspense fallback={null}>
-              <DesignPage />
-            </Suspense>
-          }
-        />
-      )}
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+    <>
+      <SessionWatcher />
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route element={<RedirectIfAuthed />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+        </Route>
+        <Route element={<RequireAuth />}>
+          <Route element={<AuthedShell />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/products" element={<ProductsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
+        </Route>
+        {DesignPage && (
+          <Route
+            path="/design"
+            element={
+              <Suspense fallback={null}>
+                <DesignPage />
+              </Suspense>
+            }
+          />
+        )}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </>
   );
 }
