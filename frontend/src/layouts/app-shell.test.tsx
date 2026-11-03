@@ -3,6 +3,7 @@
  * PURPOSE: Tests navigation, active-link marking, identity display and the mobile menu.
  * LAYER: Test
  */
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -13,25 +14,29 @@ import { AppShell } from './app-shell';
 function renderShell(path = '/products', props: Parameters<typeof AppShell>[0] = {}) {
   return render(
     <ThemeProvider>
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>
-          <Route element={<AppShell {...props} />}>
-            <Route path="/dashboard" element={<p>dash</p>} />
-            <Route path="/products" element={<p>prods</p>} />
-            <Route path="/settings" element={<p>sets</p>} />
-          </Route>
-        </Routes>
-      </MemoryRouter>
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <MemoryRouter initialEntries={[path]}>
+          <Routes>
+            <Route element={<AppShell {...props} />}>
+              <Route path="/dashboard" element={<p>dash</p>} />
+              <Route path="/products" element={<p>prods</p>} />
+              <Route path="/settings" element={<p>sets</p>} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
     </ThemeProvider>,
   );
 }
 
 describe('AppShell', () => {
   // Protects: users (and screen readers) can tell where they are.
-  it('renders the three nav links and marks only the active one with aria-current="page"', () => {
+  it('renders the four nav links and marks only the active one with aria-current="page"', () => {
     renderShell('/products');
     const nav = screen.getByRole('navigation', { name: 'Primary' });
-    expect(nav.querySelectorAll('a')).toHaveLength(3);
+    expect(nav.querySelectorAll('a')).toHaveLength(4);
     expect(screen.getByRole('link', { name: 'Products' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Overview' })).not.toHaveAttribute('aria-current');
     expect(screen.getByText('prods')).toBeInTheDocument();

@@ -6,7 +6,12 @@
  * DEPENDS ON: products.service.ts, middleware/auth.ts, utils/api-response.ts, utils/async-handler.ts
  * NOTES: No Prisma imports here. No business logic. Controllers only translate HTTP <-> service.
  */
-import type { CreateProductInput, UpdateProductInput, ListProductsQuery } from '@meridio/contracts';
+import type {
+  AdjustStockInput,
+  CreateProductInput,
+  UpdateProductInput,
+  ListProductsQuery,
+} from '@meridio/contracts';
 import { getAuth } from '../../middleware/auth.js';
 import { ok } from '../../utils/api-response.js';
 import { asyncHandler } from '../../utils/async-handler.js';
@@ -70,12 +75,27 @@ export function createProductsController(service: ProductsService) {
     }),
 
     /**
+     * PATCH /products/:id/stock
+     * Applies a relative stock change ("+N" / "-N") with an optional note.
+     */
+    adjustStock: asyncHandler(async (req, res) => {
+      const { organizationId, userId } = getAuth(req);
+      const product = await service.adjustStock(
+        req.params.id as string,
+        req.body as AdjustStockInput,
+        organizationId,
+        userId,
+      );
+      ok(res, product);
+    }),
+
+    /**
      * DELETE /products/:id
      * Hard-deletes a product. Returns 200 with { data: { id } }.
      */
     remove: asyncHandler(async (req, res) => {
-      const { organizationId } = getAuth(req);
-      const result = await service.delete(req.params.id as string, organizationId);
+      const { organizationId, userId } = getAuth(req);
+      const result = await service.delete(req.params.id as string, organizationId, userId);
       ok(res, result);
     }),
   };

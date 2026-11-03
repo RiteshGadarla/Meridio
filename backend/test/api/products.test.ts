@@ -142,6 +142,94 @@ describe('Product CRUD lifecycle', () => {
     const user = await prisma.user.findFirstOrThrow();
     const createRes = await post(cookie);
     expect(createRes.body.data.updatedById).toBe(user.id);
+    // The owner has no display name, so the email is shown as the label.
+    expect(createRes.body.data.updatedByName).toBe(signupCreds.email);
+  });
+});
+
+// ===== Stock adjustment =====
+
+const adjust = (cookie: string, id: string, body: Record<string, unknown>) =>
+  request(app)
+    .patch(`/api/v1/products/${id}/stock`)
+    .set('Origin', TEST_ORIGIN)
+    .set('Cookie', cookie)
+    .send(body);
+
+// Protects: PATCH /products/:id/stock applies relative changes atomically and never allows negative stock.
+describe('Stock adjustment', () => {
+  it('adds and removes units and recomputes the stock status', async () => {
+    const cookie = await signupAndGetCookie();
+    const { id } = (await post(cookie)).body.data; // quantity 100, threshold 10
+
+    const down = await adjust(cookie, id, { delta: -95, note: 'Damaged in transit' });
+    expect(down.status).toBe(200);
+    expect(down.body.data.quantityOnHand).toBe(5);
+    expect(down.body.data.stockStatus).toBe('LOW_STOCK');
+
+    const up = await adjust(cookie, id, { delta: 20 });
+    expect(up.body.data.quantityOnHand).toBe(25);
+    expect(up.body.data.stockStatus).toBe('HEALTHY');
+  });
+
+  it('rejects a change that would make stock negative and leaves the quantity untouched', async () => {
+    const cookie = await signupAndGetCookie();
+    const { id } = (await post(cookie, { ...validProduct, quantityOnHand: 3 })).body.data;
+
+    const res = await adjust(cookie, id, { delta: -4 });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(res.body.error.fieldErrors.delta).toContain('Only 3 in stock');
+    expect((await get(cookie, `/${id}`)).body.data.quantityOnHand).toBe(3);
+  });
+
+  it('allows removing exactly the stock on hand (down to 0 = out of stock)', async () => {
+    const cookie = await signupAndGetCookie();
+    const { id } = (await post(cookie, { ...validProduct, quantityOnHand: 3 })).body.data;
+    const res = await adjust(cookie, id, { delta: -3 });
+    expect(res.body.data.quantityOnHand).toBe(0);
+    expect(res.body.data.stockStatus).toBe('OUT_OF_STOCK');
+  });
+
+  it('rejects zero, non-integer and missing deltas', async () => {
+    const cookie = await signupAndGetCookie();
+    const { id } = (await post(cookie)).body.data;
+    for (const body of [{ delta: 0 }, { delta: 1.5 }, {}, { delta: 'abc' }]) {
+      expect((await adjust(cookie, id, body)).status).toBe(400);
+    }
+  });
+
+  it('rejects a change that would exceed the maximum quantity', async () => {
+    const cookie = await signupAndGetCookie();
+    const { id } = (await post(cookie, { ...validProduct, quantityOnHand: 999_999 })).body.data;
+    const res = await adjust(cookie, id, { delta: 2 });
+    expect(res.status).toBe(400);
+    expect(res.body.error.fieldErrors.delta).toContain('cannot exceed');
+  });
+
+  it('returns 404 for an unknown product, and 401 without a session', async () => {
+    const cookie = await signupAndGetCookie();
+    expect((await adjust(cookie, 'does-not-exist', { delta: 1 })).status).toBe(404);
+    const anon = await request(app)
+      .patch('/api/v1/products/x/stock')
+      .set('Origin', TEST_ORIGIN)
+      .send({ delta: 1 });
+    expect(anon.status).toBe(401);
+  });
+
+  it("returns 404 (not 403) for another tenant's product and does not change it", async () => {
+    const cookieA = await signupAndGetCookie();
+    const { id } = (await post(cookieA)).body.data;
+    const resB = await request(app)
+      .post('/api/v1/auth/signup')
+      .set('Origin', TEST_ORIGIN)
+      .send({ email: 'owner@globex.test', password: 'Passw0rdOK', organizationName: 'Globex' });
+    const cookieB = (resB.headers['set-cookie'] as unknown as string[])
+      .find((c) => c.startsWith('sf_session='))!
+      .split(';')[0]!;
+
+    expect((await adjust(cookieB, id, { delta: -50 })).status).toBe(404);
+    expect((await get(cookieA, `/${id}`)).body.data.quantityOnHand).toBe(100);
   });
 });
 

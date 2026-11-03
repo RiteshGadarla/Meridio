@@ -15,11 +15,14 @@ export function Pagination({
   meta,
   onPage,
   onPageSize,
+  nouns = ['product', 'products'],
 }: {
   meta: PaginationMeta;
   onPage: (page: number) => void;
   /** When given, shows the rows-per-page selector. */
   onPageSize?: (size: number) => void;
+  /** [singular, plural] label for the counted rows. */
+  nouns?: readonly [string, string];
 }) {
   const pages = Math.max(meta.totalPages, 1);
   return (
@@ -42,7 +45,7 @@ export function Pagination({
       )}
       <p className="font-data text-graphite-soft">
         Page {meta.page} of {pages} · {formatNumber(meta.total)}{' '}
-        {meta.total === 1 ? 'product' : 'products'}
+        {meta.total === 1 ? nouns[0] : nouns[1]}
       </p>
       <div className="flex gap-2">
         <Button

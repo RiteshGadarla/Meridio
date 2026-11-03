@@ -129,6 +129,8 @@ describe('products.update field handling', () => {
     await expect(products.update('nope', { name: 'x' }, org.id, user.id)).rejects.toMatchObject({
       code: 'NOT_FOUND',
     });
-    await expect(products.delete('nope', org.id)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(products.delete('nope', org.id, user.id)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
   });
 });

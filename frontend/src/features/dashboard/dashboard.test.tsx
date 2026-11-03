@@ -26,6 +26,7 @@ const product = (over: Partial<ProductDto> = {}): ProductDto => ({
   effectiveThreshold: 10,
   stockStatus: 'LOW_STOCK',
   updatedById: null,
+  updatedByName: null,
   createdAt: '2026-11-02T10:00:00.000Z',
   updatedAt: '2026-11-02T10:00:00.000Z',
   ...over,

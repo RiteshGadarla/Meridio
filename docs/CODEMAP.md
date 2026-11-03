@@ -216,17 +216,33 @@ One line per file. Updated every stage.
 
 ### Stage 12 additions
 
-| File                                                        | Purpose                                                                                                 |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `frontend/vercel.json`                                      | Vercel build settings, `/api` rewrite to Render (before the SPA fallback), no rewrite caching           |
-| `render.yaml`                                               | Render Blueprint for the API (build, start that migrates first, health check, env vars)                 |
-| `docs/DEPLOYMENT.md`                                        | Click-path checklist, env table, troubleshooting                                                        |
-| `scripts/smoke-prod.mjs` (+ `.d.mts`)                       | Post-deploy smoke test (`npm run smoke:prod -- <url>`)                                                  |
-| `scripts/check-bundle.mjs` (+ `.d.mts`)                     | Fails the build if the web bundle leaks localhost/DB/secret/backend-host strings                        |
-| `backend/test/deploy/deploy.test.ts`                        | Tests for vercel.json, render.yaml, bundle scan, production mode, proxy-aware rate limits, smoke script |
-| `frontend/src/lib/slow-requests.ts`                         | Tracks requests pending over 5s                                                                         |
-| `frontend/src/components/server-waking-notice.tsx` (+ test) | "Waking up the server" banner                                                                           |
-| `backend/src/config/env.ts`                                 | Adds `TRUST_PROXY_HOPS`                                                                                 |
+| File                                                                  | Purpose                                                                                                 |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `frontend/vercel.json`                                                | Vercel build settings, `/api` rewrite to Render (before the SPA fallback), no rewrite caching           |
+| `render.yaml`                                                         | Render Blueprint for the API (build, start that migrates first, health check, env vars)                 |
+| `docs/DEPLOYMENT.md`                                                  | Click-path checklist, env table, troubleshooting                                                        |
+| `scripts/smoke-prod.mjs` (+ `.d.mts`)                                 | Post-deploy smoke test (`npm run smoke:prod -- <url>`)                                                  |
+| `scripts/check-bundle.mjs` (+ `.d.mts`)                               | Fails the build if the web bundle leaks localhost/DB/secret/backend-host strings                        |
+| `backend/test/deploy/deploy.test.ts`                                  | Tests for vercel.json, render.yaml, bundle scan, production mode, proxy-aware rate limits, smoke script |
+| `frontend/src/lib/slow-requests.ts`                                   | Tracks requests pending over 5s                                                                         |
+| `frontend/src/lib/wake-backend.ts`                                    | Background ping to /health/ready on page load to wake Render + Neon                                     |
+| `frontend/src/lib/wake-backend.test.ts`                               | Tests the wake ping                                                                                     |
+| `backend/prisma/migrations/20261103030000_activity_log/migration.sql` | ActivityLog table + ActivityAction enum (sidebar feed)                                                  |
+| `backend/src/modules/activity/activity.service.ts`                    | Records (best-effort) and lists activity feed entries                                                   |
+| `backend/src/modules/activity/activity.routes.ts`                     | `GET /activity` behind requireAuth                                                                      |
+| `backend/src/modules/activity/index.ts`                               | Public exports of the activity module                                                                   |
+| `backend/test/api/activity.test.ts`                                   | Feed contents, limit, tenant isolation, auth                                                            |
+| `packages/contracts/src/activity.ts`                                  | Activity action list, query schema, ActivityDto                                                         |
+| `frontend/src/features/activity/api.ts`                               | `GET /activity` call                                                                                    |
+| `frontend/src/features/activity/hooks.ts`                             | `useActivity` query hook                                                                                |
+| `frontend/src/pages/logs-page.tsx`                                    | `/logs`: full activity log table (latest 50)                                                            |
+| `frontend/src/features/activity/activity-feed.tsx`                    | Sidebar "Recent activity" list                                                                          |
+| `frontend/src/features/activity/activity-feed.test.tsx`               | Feed rendering, refresh after changes, relative time                                                    |
+| `frontend/src/features/products/adjust-stock-dialog.tsx`              | "Adjust stock" dialog (+/- N units and a note)                                                          |
+| `frontend/src/components/error-boundary.tsx`                          | Crash recovery screen (Try again / Reload / Go to overview)                                             |
+| `frontend/src/components/error-boundary.test.tsx`                     | Tests for the error boundary and the 404 page                                                           |
+| `frontend/src/components/server-waking-notice.tsx` (+ test)           | "Waking up the server" banner                                                                           |
+| `backend/src/config/env.ts`                                           | Adds `TRUST_PROXY_HOPS`                                                                                 |
 
 ### Single database URL (Stage 12)
 

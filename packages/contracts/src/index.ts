@@ -13,6 +13,7 @@ export const PRODUCT_NAME = 'StockFlow';
 export * from './common.js';
 export * from './auth.js';
 export * from './product.js';
+export * from './activity.js';
 export * from './settings.js';
 export * from './dashboard.js';
 export * from './stock-status.js';

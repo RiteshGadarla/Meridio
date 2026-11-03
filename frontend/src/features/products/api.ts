@@ -6,6 +6,7 @@
  * DEPENDS ON: lib/api-client.ts, @meridio/contracts
  */
 import type {
+  AdjustStockInput,
   CreateProductInput,
   PaginationMeta,
   ProductDto,
@@ -45,5 +46,7 @@ export const createProduct = (input: CreateProductInput) =>
   api.post<ProductDto>('/products', input);
 export const updateProduct = (id: string, input: UpdateProductInput) =>
   api.patch<ProductDto>(`/products/${encodeURIComponent(id)}`, input);
+export const adjustStock = (id: string, input: AdjustStockInput) =>
+  api.patch<ProductDto>(`/products/${encodeURIComponent(id)}/stock`, input);
 export const deleteProduct = (id: string) =>
   api.delete<{ id: string }>(`/products/${encodeURIComponent(id)}`);

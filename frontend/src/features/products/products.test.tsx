@@ -431,3 +431,90 @@ describe('delete', () => {
     expect(await screen.findByText('Product 1')).toBeInTheDocument();
   });
 });
+
+// Protects: the PRD's inline "Adjust stock" control (+/- N units and a note).
+describe('adjust stock', () => {
+  const keyboard = makeProduct(1, { name: 'Keyboard', quantityOnHand: 12 });
+
+  async function openDialog() {
+    renderApp('/products');
+    await userEvent.click(await screen.findByRole('button', { name: 'Adjust stock for Keyboard' }));
+    return screen.findByRole('dialog', { name: 'Adjust stock' });
+  }
+
+  it('sends a relative change with the note, previews the result and refreshes the row', async () => {
+    const rec = fakeProductsApi([keyboard]);
+    const dialog = await openDialog();
+    await userEvent.type(within(dialog).getByLabelText(/^Change/), '-5');
+    expect(within(dialog).getByText('12 → 7')).toBeInTheDocument();
+    await userEvent.type(within(dialog).getByLabelText(/^Note/), 'Damaged');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply change' }));
+    await waitFor(() => expect(rec.adjusts).toHaveLength(1));
+    expect(rec.adjusts[0]).toEqual({ id: 'p1', body: { delta: -5, note: 'Damaged' } });
+    expect(await screen.findByText(/now 7 in stock/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('accepts a leading + and omits an empty note', async () => {
+    const rec = fakeProductsApi([keyboard]);
+    const dialog = await openDialog();
+    await userEvent.type(within(dialog).getByLabelText(/^Change/), '+3');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply change' }));
+    await waitFor(() => expect(rec.adjusts[0]?.body).toEqual({ delta: 3 }));
+  });
+
+  it('rejects empty, zero and non-numeric input without calling the API', async () => {
+    const rec = fakeProductsApi([keyboard]);
+    const dialog = await openDialog();
+    const apply = within(dialog).getByRole('button', { name: 'Apply change' });
+    await userEvent.click(apply);
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(/Enter a number of units/);
+    await userEvent.type(within(dialog).getByLabelText(/^Change/), '0');
+    await userEvent.click(apply);
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(/other than zero/);
+    expect(rec.adjusts).toHaveLength(0);
+  });
+
+  it("shows the server's refusal on the field when stock would go negative", async () => {
+    fakeProductsApi([keyboard]);
+    const dialog = await openDialog();
+    await userEvent.type(within(dialog).getByLabelText(/^Change/), '-50');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply change' }));
+    expect(await within(dialog).findByText(/Only 12 in stock/)).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Adjust stock' })).toBeInTheDocument();
+  });
+});
+
+// Protects: last-change attribution (PRD FR-5 "last_updated_by").
+describe('last updated attribution', () => {
+  it('shows who changed the product and when in the edit drawer', async () => {
+    fakeProductsApi([makeProduct(1, { updatedByName: 'Asha Rao' })]);
+    renderApp('/products?edit=p1');
+    expect(await screen.findByText(/Last updated .* by Asha Rao/)).toBeInTheDocument();
+  });
+
+  it('omits the "by" part when the updater is unknown', async () => {
+    fakeProductsApi([makeProduct(1, { updatedByName: null })]);
+    renderApp('/products?edit=p1');
+    const line = await screen.findByText(/^Last updated/);
+    expect(line.textContent).not.toContain(' by ');
+  });
+});
+
+// Protects: refresh / tab close with an unsaved form triggers the browser's native warning.
+describe('beforeunload guard', () => {
+  it('blocks unload only while the form is dirty', async () => {
+    fakeProductsApi([]);
+    renderApp('/products?new=1');
+    await screen.findByRole('dialog', { name: 'Add product' });
+
+    const clean = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(clean);
+    expect(clean.defaultPrevented).toBe(false);
+
+    await userEvent.type(field('Product name'), 'Half done');
+    const dirty = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(dirty);
+    expect(dirty.defaultPrevented).toBe(true);
+  });
+});

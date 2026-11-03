@@ -20,6 +20,7 @@ export function makeProduct(i: number, over: Partial<ProductDto> = {}): ProductD
     effectiveThreshold: 5,
     stockStatus: 'HEALTHY',
     updatedById: null,
+    updatedByName: null,
     createdAt: '2026-11-02T10:00:00.000Z',
     updatedAt: '2026-11-02T10:00:00.000Z',
     ...over,
@@ -30,13 +31,14 @@ export interface Recorded {
   listUrls: URL[];
   posts: unknown[];
   patches: { id: string; body: Record<string, unknown> }[];
+  adjusts: { id: string; body: Record<string, unknown> }[];
   deletes: string[];
 }
 
 /** Installs handlers for every /products route backed by `initial`. */
 export function fakeProductsApi(initial: ProductDto[]) {
   let rows = [...initial];
-  const rec: Recorded = { listUrls: [], posts: [], patches: [], deletes: [] };
+  const rec: Recorded = { listUrls: [], posts: [], patches: [], adjusts: [], deletes: [] };
   const error = (
     code: string,
     message: string,
@@ -83,6 +85,19 @@ export function fakeProductsApi(initial: ProductDto[]) {
       });
       rows = [created, ...rows];
       return HttpResponse.json({ data: created }, { status: 201 });
+    }),
+    http.patch('*/api/v1/products/:id/stock', async ({ params, request }) => {
+      const body = (await request.json()) as { delta: number };
+      rec.adjusts.push({ id: String(params.id), body });
+      const row = rows.find((r) => r.id === params.id);
+      if (!row) return error('NOT_FOUND', 'Product not found', 404);
+      if (row.quantityOnHand + body.delta < 0) {
+        const message = `Only ${row.quantityOnHand} in stock; you cannot remove ${-body.delta}.`;
+        return error('VALIDATION_ERROR', message, 400, { delta: message });
+      }
+      const updated = { ...row, quantityOnHand: row.quantityOnHand + body.delta };
+      rows = rows.map((r) => (r.id === row.id ? updated : r));
+      return HttpResponse.json({ data: updated });
     }),
     http.patch('*/api/v1/products/:id', async ({ params, request }) => {
       const body = (await request.json()) as Record<string, unknown>;

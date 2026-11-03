@@ -31,6 +31,7 @@ import { requestId } from './middleware/request-id.js';
 import { createHealthRouter, type DatabaseCheck } from './modules/health/health.routes.js';
 import { createDashboardRouter } from './modules/dashboard/dashboard.routes.js';
 import { createSettingsRouter } from './modules/settings/settings.routes.js';
+import { createActivityRouter } from './modules/activity/index.js';
 import { createProductsRouter } from './modules/products/index.js';
 
 /** Options mainly used by tests; production calls createApp() with no arguments. */
@@ -117,6 +118,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   );
   const protectedDeps = { prisma: options.prisma ?? defaultPrisma, jwt };
   api.use('/dashboard', createDashboardRouter(protectedDeps));
+  api.use('/activity', createActivityRouter(protectedDeps));
   api.use('/settings', createSettingsRouter(protectedDeps));
   options.mountRoutes?.(api);
 

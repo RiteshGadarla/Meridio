@@ -7,7 +7,7 @@
  * NOTES: Closing with unsaved changes asks for confirmation. Edit mode handles a product that no
  *        longer exists (404) with a friendly message instead of an empty form.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
@@ -16,6 +16,7 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { ErrorState } from '../../components/ui/states';
 import { useToast } from '../../components/ui/toast';
 import { ApiError } from '../../lib/api-client';
+import { formatDateTime } from '../../lib/format';
 import { useCurrentUser } from '../auth/hooks';
 import { PRODUCT_FORM_ID, ProductForm } from './product-form';
 import { useCreateProduct, useProduct, useUpdateProduct } from './hooks';
@@ -50,6 +51,18 @@ export function ProductDrawer() {
       { replace: true },
     );
   }, [setParams]);
+
+  // SAFETY: a refresh or tab close would silently discard the form, so ask the browser to warn first.
+  // (In-app closes are covered by the "Discard changes?" dialog below.)
+  useEffect(() => {
+    if (!open || !dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = ''; // required by some browsers to show the native prompt
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [open, dirty]);
 
   const requestClose = () => (dirty ? setConfirmDiscard(true) : close());
 
@@ -97,6 +110,13 @@ export function ProductDrawer() {
             message="We could not load this product."
             onRetry={() => void product.refetch()}
           />
+        )}
+        {formReady && !isCreate && product.data && (
+          // Last-change attribution (PRD FR-5): who changed this product and when.
+          <p className="mb-4 text-xs text-graphite-soft">
+            Last updated {formatDateTime(product.data.updatedAt)}
+            {product.data.updatedByName ? ` by ${product.data.updatedByName}` : ''}
+          </p>
         )}
         {formReady && (
           <ProductForm

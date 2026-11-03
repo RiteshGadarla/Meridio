@@ -16,6 +16,7 @@ import {
   LogOut,
   Menu,
   Package,
+  ScrollText,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
@@ -25,6 +26,7 @@ import {
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { Avatar } from '../components/avatar';
+import { ActivityFeed } from '../features/activity/activity-feed';
 import { Logo, LogoMark } from '../components/logo';
 import { ThemeToggle } from '../components/theme-toggle';
 import { cn } from '../lib/cn';
@@ -45,6 +47,7 @@ export interface ShellUser {
 const NAV: { to: string; label: string; icon: LucideIcon }[] = [
   { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { to: '/products', label: 'Products', icon: Package },
+  { to: '/logs', label: 'Logs', icon: ScrollText },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -182,32 +185,38 @@ export function AppShell({ user, onLogout }: { user?: ShellUser; onLogout?: () =
         )}
 
         {/* ===== Navigation ===== */}
-        <nav aria-label="Primary" className="mt-6 min-h-0 flex-1 overflow-y-auto px-3">
-          <ul className="space-y-1">
-            {NAV.map(({ to, label: text, icon: Icon }) => (
-              <li key={to}>
-                <NavLink
-                  to={to}
-                  title={collapsed ? text : undefined}
-                  aria-label={collapsed ? text : undefined}
-                  onClick={() => setMenuOpen(false)}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-3 rounded-sm border-l-2 px-3 py-3 text-[0.9375rem] font-medium transition-colors',
-                      collapsed && 'md:justify-center md:px-0',
-                      isActive
-                        ? 'border-copper bg-sidebar-soft text-white'
-                        : 'border-transparent text-on-forest/75 hover:bg-sidebar-soft/70 hover:text-white',
-                    )
-                  }
-                >
-                  <Icon aria-hidden="true" className="size-5 shrink-0" />
-                  <span className={label}>{text}</span>
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <div className="mt-6 flex min-h-0 flex-1 flex-col">
+          <nav aria-label="Primary" className="shrink-0 px-3">
+            <ul className="space-y-1">
+              {NAV.map(({ to, label: text, icon: Icon }) => (
+                <li key={to}>
+                  <NavLink
+                    to={to}
+                    title={collapsed ? text : undefined}
+                    aria-label={collapsed ? text : undefined}
+                    onClick={() => setMenuOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-3 rounded-sm border-l-2 px-3 py-3 text-[0.9375rem] font-medium transition-colors',
+                        collapsed && 'md:justify-center md:px-0',
+                        isActive
+                          ? 'border-copper bg-sidebar-soft text-white'
+                          : 'border-transparent text-on-forest/75 hover:bg-sidebar-soft/70 hover:text-white',
+                      )
+                    }
+                  >
+                    <Icon aria-hidden="true" className="size-5 shrink-0" />
+                    <span className={label}>{text}</span>
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          {/* Hidden when the sidebar is collapsed to icons; there is no room for sentences. */}
+          <div className={cn('flex min-h-0 flex-1 flex-col', collapsed && 'md:hidden')}>
+            <ActivityFeed />
+          </div>
+        </div>
 
         {/* ===== Account: identity, theme switch, logout ===== */}
         <div className={cn('border-t border-on-forest/10 p-4', collapsed && 'md:px-3')}>

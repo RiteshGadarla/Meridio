@@ -41,6 +41,7 @@ model Organization {
 
   users    User[]
   products Product[]
+  activity ActivityLog[]
 }
 
 // A person who can sign in. MVP: exactly one owner per organization.
@@ -67,6 +68,7 @@ model User {
   updatedAt      DateTime     @updatedAt
 
   updatedProducts Product[]
+  activity        ActivityLog[]
 
   @@index([organizationId])
 }
@@ -102,4 +104,36 @@ model Product {
   // Prisma's drift detection does not try to drop them.
   @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "Product_name_trgm_idx")
   @@index([sku(ops: raw("gin_trgm_ops"))], type: Gin, map: "Product_sku_trgm_idx")
+}
+
+// What kind of change an activity entry records.
+enum ActivityAction {
+  PRODUCT_CREATED
+  PRODUCT_UPDATED
+  STOCK_ADJUSTED
+  PRODUCT_DELETED
+}
+
+// A short, human-readable line per inventory change, shown in the sidebar feed. This is a basic
+// activity feed, NOT an audit trail or movement ledger (both are out of scope in the PRD).
+// DECISION: productId is a plain string (no FK) and name/SKU are copied in, so an entry still reads
+// correctly after its product has been deleted.
+model ActivityLog {
+  id             String         @id @default(cuid())
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // SetNull so removing a user never deletes the feed.
+  userId         String?
+  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action         ActivityAction
+  productId      String?
+  productName    String
+  productSku     String
+  // Ready-to-display sentence, for example "Adjusted stock by -5 (12 → 7)".
+  summary        String
+  // Optional free-text note from the "Adjust stock" control.
+  note           String?
+  createdAt      DateTime       @default(now())
+
+  @@index([organizationId, createdAt])
 }

@@ -6,7 +6,12 @@
  * DEPENDS ON: ./product.ts
  */
 import { describe, expect, it } from 'vitest';
-import { createProductSchema, updateProductSchema, listProductsQuerySchema } from './product.js';
+import {
+  adjustStockSchema,
+  createProductSchema,
+  updateProductSchema,
+  listProductsQuerySchema,
+} from './product.js';
 
 // Protects: a valid product passes all constraints.
 describe('createProductSchema', () => {
@@ -194,5 +199,25 @@ describe('listProductsQuerySchema', () => {
   it('rejects invalid status filter', () => {
     const result = listProductsQuerySchema.safeParse({ status: 'UNKNOWN' });
     expect(result.success).toBe(false);
+  });
+});
+
+// Protects: the stock-adjust body only accepts a non-zero whole-number change within bounds.
+describe('adjustStockSchema', () => {
+  it('accepts positive and negative whole numbers and trims the note', () => {
+    expect(adjustStockSchema.parse({ delta: 5 })).toEqual({ delta: 5 });
+    expect(adjustStockSchema.parse({ delta: -2, note: '  Damaged  ' })).toEqual({
+      delta: -2,
+      note: 'Damaged',
+    });
+  });
+
+  it.each([[0], [1.5], ['3'], [null], [1_000_001], [-1_000_001]])('rejects delta %s', (delta) => {
+    expect(adjustStockSchema.safeParse({ delta }).success).toBe(false);
+  });
+
+  it('rejects a missing delta and a note over 200 characters', () => {
+    expect(adjustStockSchema.safeParse({}).success).toBe(false);
+    expect(adjustStockSchema.safeParse({ delta: 1, note: 'x'.repeat(201) }).success).toBe(false);
   });
 });

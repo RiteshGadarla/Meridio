@@ -24,6 +24,7 @@ import { EmptyState, ErrorState } from '../components/ui/states';
 import { useToast } from '../components/ui/toast';
 import { useDeleteProduct, useProducts } from '../features/products/hooks';
 import { PAGE_SIZES, Pagination } from '../features/products/pagination';
+import { AdjustStockDialog } from '../features/products/adjust-stock-dialog';
 import { ProductDrawer } from '../features/products/product-drawer';
 import { ProductTable } from '../features/products/product-table';
 import { SearchInput } from '../features/products/search-input';
@@ -45,6 +46,7 @@ export function ProductsPage() {
   const toast = useToast();
   const deleteProduct = useDeleteProduct();
   const [pendingDelete, setPendingDelete] = useState<ProductDto | null>(null);
+  const [adjusting, setAdjusting] = useState<ProductDto | null>(null);
 
   // Parse the URL through the same schema the API uses, so a hand-edited URL falls back safely.
   const parsed = listProductsQuerySchema.safeParse({
@@ -194,6 +196,7 @@ export function ProductsPage() {
             sort={q.sort}
             order={q.order}
             onSort={onSort}
+            onAdjust={setAdjusting}
             onDelete={setPendingDelete}
           />
           <Pagination meta={list.data.meta} onPage={onPage} onPageSize={onPageSize} />
@@ -201,6 +204,8 @@ export function ProductsPage() {
       )}
 
       <ProductDrawer />
+
+      <AdjustStockDialog product={adjusting} onClose={() => setAdjusting(null)} />
 
       <ConfirmDialog
         open={pendingDelete !== null}

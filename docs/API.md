@@ -208,9 +208,28 @@ Any subset of the create fields. Sending `"lowStockThreshold": null` removes the
 organization default applies again. An empty body is `400`. Sets `updatedById` to the caller.
 Errors: `404 NOT_FOUND`, `409 DUPLICATE_SKU`, `400 VALIDATION_ERROR`.
 
+### `PATCH /products/:id/stock`
+
+Relative stock change ("+N" / "-N"). Body: `{ "delta": -5, "note": "Damaged" }` (`delta` is a non-zero
+integer, `note` optional, max 200 chars). Applied atomically: the result must stay within
+0 to 1,000,000, otherwise `400 VALIDATION_ERROR` with `fieldErrors.delta` (for example
+"Only 3 in stock; you cannot remove 4."). `404 NOT_FOUND` for another tenant's product. Returns the
+updated product and adds a line to the activity feed (including the note).
+
 ### `DELETE /products/:id`
 
 Errors: `404 NOT_FOUND` (also for another organization's product).
+
+## Activity
+
+### `GET /activity?page=1&limit=15&action=&search=`
+
+Newest-first, paginated feed of product changes for the caller's organization. `limit` is 1 to 50.
+Optional filters: `action` (`PRODUCT_CREATED | PRODUCT_UPDATED | STOCK_ADJUSTED | PRODUCT_DELETED`)
+and `search` (case-insensitive match on product name or SKU). Returns
+`{ data: [...], meta: { page, limit, total, totalPages } }`. Each entry:
+`{ id, action, productName, productSku, summary, note, actorName, createdAt }`. A basic feed, not
+an audit trail: one short sentence per change.
 
 ## Dashboard
 

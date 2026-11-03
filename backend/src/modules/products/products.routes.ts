@@ -7,6 +7,7 @@
  */
 import { Router } from 'express';
 import {
+  adjustStockSchema,
   createProductSchema,
   updateProductSchema,
   listProductsQuerySchema,
@@ -42,6 +43,9 @@ export function createProductsRouter(deps: { prisma: PrismaClient; jwt: JwtServi
 
   // PATCH /products/:id — partially update a product
   router.patch('/:id', validate(updateProductSchema, 'body'), controller.update);
+
+  // PATCH /products/:id/stock — relative stock change with optional note
+  router.patch('/:id/stock', validate(adjustStockSchema, 'body'), controller.adjustStock);
 
   // DELETE /products/:id — hard delete a product
   router.delete('/:id', controller.remove);

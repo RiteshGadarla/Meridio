@@ -11,6 +11,7 @@
  *   - Stock status and effective threshold are computed on every read via the inventory module.
  */
 import type {
+  AdjustStockInput,
   CreateProductInput,
   UpdateProductInput,
   ListProductsQuery,
@@ -19,6 +20,8 @@ import type {
 } from '@meridio/contracts';
 import type { PrismaClient } from '../../generated/prisma/client.js';
 import { getEffectiveThreshold, getStockStatus } from '../inventory/index.js';
+import { MAX_QUANTITY } from '@meridio/contracts';
+import { createActivityService } from '../activity/index.js';
 import { AppError } from '../../utils/app-error.js';
 
 // ===== Types =====
@@ -34,9 +37,21 @@ interface ProductRow {
   sellingPrice: { toString(): string } | null;
   lowStockThreshold: number | null;
   updatedById: string | null;
+  updatedBy?: { name: string | null; email: string } | null;
   createdAt: Date;
   updatedAt: Date;
 }
+
+/** Human labels for the fields named in an "Edited ..." feed entry. */
+const FIELD_LABELS: Record<string, string> = {
+  name: 'name',
+  sku: 'SKU',
+  description: 'description',
+  quantityOnHand: 'quantity',
+  costPrice: 'cost price',
+  sellingPrice: 'selling price',
+  lowStockThreshold: 'low-stock threshold',
+};
 
 // ===== Mapper =====
 
@@ -64,6 +79,8 @@ export function toProductDto(row: ProductRow, orgDefaultThreshold: number): Prod
     effectiveThreshold,
     stockStatus,
     updatedById: row.updatedById,
+    // WHY name ?? email: password accounts have no display name, but the owner still needs a label.
+    updatedByName: row.updatedBy?.name ?? row.updatedBy?.email ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -81,6 +98,7 @@ export const productSelect = {
   sellingPrice: true,
   lowStockThreshold: true,
   updatedById: true,
+  updatedBy: { select: { name: true, email: true } },
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -92,6 +110,11 @@ export const productSelect = {
  * Every method requires an organizationId from the verified auth context.
  */
 export function createProductsService(prisma: PrismaClient) {
+  // PERFORMANCE: feed writes are fire-and-forget (`void activity.record(...)`). The product change
+  // is already committed, so the response must not wait on a second database write. record() never
+  // rejects, so there is no unhandled-promise risk.
+  const activity = createActivityService(prisma);
+
   /**
    * Loads the organization's default threshold. Called internally by every method that returns a DTO.
    * @throws AppError if the organization is not found (should never happen with valid auth).
@@ -145,7 +168,17 @@ export function createProductsService(prisma: PrismaClient) {
         select: productSelect,
       });
       const orgDefault = await getOrgDefault(organizationId);
-      return toProductDto(row, orgDefault);
+      const dto = toProductDto(row, orgDefault);
+      void activity.record({
+        organizationId,
+        userId,
+        action: 'PRODUCT_CREATED',
+        productId: dto.id,
+        productName: dto.name,
+        productSku: dto.sku,
+        summary: `Added with ${dto.quantityOnHand} ${dto.quantityOnHand === 1 ? 'unit' : 'units'}`,
+      });
+      return dto;
     },
 
     /**
@@ -290,7 +323,75 @@ export function createProductsService(prisma: PrismaClient) {
       }
 
       // Re-fetch the updated product to return the full DTO with computed fields.
-      return this.getById(id, organizationId);
+      const dto = await this.getById(id, organizationId);
+      const changed = Object.keys(input).map((k) => FIELD_LABELS[k] ?? k);
+      void activity.record({
+        organizationId,
+        userId,
+        action: 'PRODUCT_UPDATED',
+        productId: dto.id,
+        productName: dto.name,
+        productSku: dto.sku,
+        summary: `Edited ${changed.join(', ')}`,
+      });
+      return dto;
+    },
+
+    /**
+     * Applies a relative stock change ("+5" / "-2") atomically.
+     * @param id Product id.
+     * @param input Validated delta (non-zero integer) and optional note.
+     * @param organizationId From req.auth.
+     * @param userId From req.auth (set as updatedById).
+     * @returns The updated ProductDto.
+     * @throws AppError NOT_FOUND if the product is not in this org.
+     * @throws AppError VALIDATION_ERROR (field `delta`) if the result would be below 0 or above the maximum.
+     */
+    async adjustStock(
+      id: string,
+      input: AdjustStockInput,
+      organizationId: string,
+      userId: string,
+    ): Promise<ProductDto> {
+      const { delta } = input;
+      // WHY a guarded atomic increment: reading then writing would let two concurrent adjustments
+      // oversell. The WHERE clause only matches while the result stays within 0..MAX_QUANTITY.
+      const result = await prisma.product.updateMany({
+        where: {
+          id,
+          organizationId, // TENANT SCOPE
+          quantityOnHand: { gte: Math.max(0, -delta), lte: MAX_QUANTITY - Math.max(0, delta) },
+        },
+        data: { quantityOnHand: { increment: delta }, updatedById: userId },
+      });
+
+      if (result.count === 0) {
+        // Distinguish "no such product" (404) from "change not allowed" (400).
+        const current = await prisma.product.findFirst({
+          where: { id, organizationId }, // TENANT SCOPE
+          select: { quantityOnHand: true },
+        });
+        if (!current) throw new AppError('NOT_FOUND', 'Product not found');
+        // EDGE CASE: stock can never go negative, so tell the user how much is actually available.
+        const message =
+          delta < 0
+            ? `Only ${current.quantityOnHand} in stock; you cannot remove ${-delta}.`
+            : `Quantity cannot exceed ${MAX_QUANTITY.toLocaleString('en-US')}.`;
+        throw new AppError('VALIDATION_ERROR', message, { delta: message });
+      }
+
+      const dto = await this.getById(id, organizationId);
+      void activity.record({
+        organizationId,
+        userId,
+        action: 'STOCK_ADJUSTED',
+        productId: dto.id,
+        productName: dto.name,
+        productSku: dto.sku,
+        summary: `Stock ${delta > 0 ? '+' : ''}${delta} (${dto.quantityOnHand - delta} → ${dto.quantityOnHand})`,
+        note: input.note || undefined,
+      });
+      return dto;
     },
 
     /**
@@ -298,7 +399,12 @@ export function createProductsService(prisma: PrismaClient) {
      * @returns The deleted product's id.
      * @throws AppError NOT_FOUND if the product does not exist in this org.
      */
-    async delete(id: string, organizationId: string): Promise<{ id: string }> {
+    async delete(id: string, organizationId: string, userId: string): Promise<{ id: string }> {
+      // Read the name/SKU first: after the delete there is nothing left to describe in the feed.
+      const existing = await prisma.product.findFirst({
+        where: { id, organizationId }, // TENANT SCOPE
+        select: { name: true, sku: true },
+      });
       // TENANT SCOPE: deleteMany with { id, organizationId }.
       const result = await prisma.product.deleteMany({
         where: { id, organizationId },
@@ -308,6 +414,17 @@ export function createProductsService(prisma: PrismaClient) {
         throw new AppError('NOT_FOUND', 'Product not found');
       }
 
+      if (existing) {
+        void activity.record({
+          organizationId,
+          userId,
+          action: 'PRODUCT_DELETED',
+          productId: id,
+          productName: existing.name,
+          productSku: existing.sku,
+          summary: 'Deleted',
+        });
+      }
       return { id };
     },
   };

@@ -7,7 +7,7 @@
  *        the table scrolls horizontally and the SKU is also shown under the product name.
  */
 import type { ProductDto, ProductSortField } from '@meridio/contracts';
-import { ArrowDown, ArrowUp, ChevronsUpDown, Pencil, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronsUpDown, Pencil, Diff, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ThresholdCell } from '../../components/threshold-cell';
 import { StatusBadge } from '../../components/ui/badge';
@@ -49,10 +49,18 @@ export interface ProductTableProps {
   sort: ProductSortField;
   order: 'asc' | 'desc';
   onSort: (field: ProductSortField) => void;
+  onAdjust: (product: ProductDto) => void;
   onDelete: (product: ProductDto) => void;
 }
 
-export function ProductTable({ products, sort, order, onSort, onDelete }: ProductTableProps) {
+export function ProductTable({
+  products,
+  sort,
+  order,
+  onSort,
+  onAdjust,
+  onDelete,
+}: ProductTableProps) {
   const money = useMoney();
   return (
     <Table caption="Products" centered>
@@ -106,6 +114,14 @@ export function ProductTable({ products, sort, order, onSort, onDelete }: Produc
             <TD numeric>{money(p.sellingPrice)}</TD>
             <TD>
               <div className="flex justify-center gap-1">
+                <button
+                  type="button"
+                  aria-label={`Adjust stock for ${p.name}`}
+                  onClick={() => onAdjust(p)}
+                  className="rounded-sm p-2 text-graphite-soft hover:bg-sandstone/60 hover:text-graphite"
+                >
+                  <Diff aria-hidden="true" className="size-4" />
+                </button>
                 <Link
                   to={`/products?edit=${encodeURIComponent(p.id)}`}
                   aria-label={`Edit ${p.name}`}

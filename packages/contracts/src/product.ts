@@ -116,6 +116,30 @@ export const updateProductSchema = productFields
 
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 
+// ===== Stock adjustment =====
+
+/** Upper bound for quantity on hand; mirrors the product schema so an adjust can never exceed it. */
+export const MAX_QUANTITY = 1_000_000;
+
+/**
+ * Request body for PATCH /products/:id/stock: a relative change ("+5", "-2") with an optional note.
+ * WHY relative (not absolute): two people adjusting at once never overwrite each other's change.
+ * The note is stored only on the activity-feed entry (there is no movement ledger).
+ */
+export const adjustStockSchema = z.object({
+  delta: z
+    .number({ message: 'Enter a number of units' })
+    .int('Must be a whole number')
+    .refine((v) => v !== 0, 'Enter a change other than zero')
+    .refine(
+      (v) => Math.abs(v) <= MAX_QUANTITY,
+      `Must be at most ${MAX_QUANTITY.toLocaleString('en-US')} units`,
+    ),
+  note: z.string().trim().max(200, 'Note must be at most 200 characters').optional(),
+});
+
+export type AdjustStockInput = z.infer<typeof adjustStockSchema>;
+
 // ===== List / Search / Pagination =====
 
 /** Columns the list can be sorted by. Whitelisted to prevent SQL injection via dynamic ORDER BY. */
@@ -162,6 +186,8 @@ export interface ProductDto {
   /** Server-computed stock status. */
   stockStatus: StockStatus;
   updatedById: string | null;
+  /** Display name (or email) of whoever last changed the product; null if that user was removed. */
+  updatedByName: string | null;
   createdAt: string;
   updatedAt: string;
 }

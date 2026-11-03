@@ -1,6 +1,6 @@
 /**
  * FILE: frontend/src/app/routes.tsx
- * PURPOSE: Route table. Public: / (intro page), /login, /signup. Shell: /dashboard, /products, /settings.
+ * PURPOSE: Route table. Public: / (intro page), /login, /signup. Shell: /dashboard, /products, /logs, /settings.
  * LAYER: App wiring
  * USED BY: App.tsx, tests (inside a MemoryRouter)
  * NOTES:
@@ -19,6 +19,7 @@ import {
 import { DashboardPage } from '../pages/dashboard-page';
 import { GoogleOrganizationPage } from '../pages/google-organization-page';
 import { LandingPage } from '../pages/landing-page';
+import { LogsPage } from '../pages/logs-page';
 import { LoginPage } from '../pages/login-page';
 import { NotFoundPage } from '../pages/not-found-page';
 import { ProductsPage } from '../pages/products-page';
@@ -42,6 +43,7 @@ export function AppRoutes() {
           <Route element={<AuthedShell />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/products" element={<ProductsPage />} />
+            <Route path="/logs" element={<LogsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Route>
