@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/assets/logo.svg" alt="StockFlow logo" width="72" height="72">
+
 # StockFlow
 
 **Multi-tenant inventory management: products, stock levels and low-stock alerts, with strict tenant isolation.**
@@ -18,7 +20,7 @@
 
 ## Overview
 
-StockFlow (repo code name _Meridio_) lets an organization manage its product catalogue, see what needs
+StockFlow lets an organization manage its product catalogue, see what needs
 attention at a glance, and configure a default low-stock threshold. Each signup creates an isolated
 organization (the tenant); no user can ever read or modify another tenant's data.
 

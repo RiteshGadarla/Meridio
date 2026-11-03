@@ -19,6 +19,9 @@
 
 @layer base {
   html {
+    /* WHY: the landing intro locks scrolling (overflow hidden). Without a reserved gutter the
+       scrollbar vanishing/reappearing shifts centred content ~7px and the logo hand-off jitters. */
+    scrollbar-gutter: stable;
     font-family: var(--font-sans);
     color: var(--color-graphite);
     background-color: var(--color-limestone);
